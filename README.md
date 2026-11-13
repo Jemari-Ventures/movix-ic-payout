@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ## Run
 
 ```bash
-streamlit run movix_dispatcher/app.py
+streamlit run app.py
 ```
 
 Upload the IC Payment `.xlsx` in the sidebar. Use **Batch payout** for all drivers or **Single driver** for detail + CSV export.
