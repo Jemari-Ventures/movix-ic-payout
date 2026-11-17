@@ -28,13 +28,13 @@ def _money(amount: float, symbol: str) -> str:
 
 def main() -> None:
     st.set_page_config(
-        page_title="Movix IC Payout",
+        page_title="Movix OKAR Payout",
         page_icon=None,
         layout="wide",
     )
-    st.title("Movix IC Courier Payout")
+    st.title("Movix OKAR Courier Payout")
     st.caption(
-        "Standalone calculator for Kulim Independent Contractor couriers. "
+        "Standalone calculator for OS Karangan (OKAR) couriers. "
         "Uses Sheet1 of the IC Payment export and the Movix weight / basic / attendance rate card."
     )
 
