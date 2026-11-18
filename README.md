@@ -44,7 +44,12 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Upload the IC Payment `.xlsx` in the sidebar. Use **Batch payout** for all drivers or **Single driver** for detail + CSV export.
+Upload the IC Payment `.xlsx` in the sidebar. Tabs:
+
+- **Batch payout** — all drivers + CSV
+- **Single driver** — detail + parcel CSV
+- **Analytics** — fleet and per-driver charts (run batch calculate first for fleet view)
+- **Invoice** — printable HTML invoice + download
 
 ## Config
 

@@ -1,11 +1,11 @@
-"""Streamlit UI for Movix IC courier payout (standalone)."""
+"""Streamlit UI for Movix OKAR courier payout (standalone)."""
 
 from __future__ import annotations
 
 import io
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
 # Streamlit runs this file as a script; ensure repo root is importable.
 _ROOT = Path(__file__).resolve().parent.parent
@@ -14,16 +14,43 @@ if str(_ROOT) not in sys.path:
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
-from movix_dispatcher.calculator import MovixPayoutCalculator, results_to_summary_frame
+from movix_dispatcher.analytics import (
+    build_driver_charts,
+    build_fleet_charts,
+    fleet_kpi_cards,
+)
+from movix_dispatcher.calculator import MovixPayoutCalculator, PayoutResult, results_to_summary_frame
 from movix_dispatcher.config import MovixConfig
 from movix_dispatcher.ingest import date_bounds, driver_directory, load_sheet1
+from movix_dispatcher.invoice import build_invoice_html
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config_movix.json"
 
 
 def _money(amount: float, symbol: str) -> str:
     return f"{symbol}{amount:,.2f}"
+
+
+def _driver_options(drivers: pd.DataFrame) -> List[str]:
+    return [
+        f"{row.driver_id} — {row.driver_name}" if row.driver_name else str(row.driver_id)
+        for row in drivers.itertuples(index=False)
+    ]
+
+
+def _parse_driver_id(choice: str) -> str:
+    return choice.split(" — ", 1)[0].strip() if choice else ""
+
+
+def _result_lookup(results: Optional[List[PayoutResult]], driver_id: str) -> Optional[PayoutResult]:
+    if not results:
+        return None
+    for result in results:
+        if str(result.driver_id) == str(driver_id):
+            return result
+    return None
 
 
 def main() -> None:
@@ -45,7 +72,7 @@ def main() -> None:
         st.header("Data")
         uploaded = st.file_uploader("Upload IC Payment Excel (.xlsx)", type=["xlsx"])
         st.markdown("**Rate card**")
-        st.dataframe(pd.DataFrame(config.rate_table_rows()), hide_index=True, width='stretch')
+        st.dataframe(pd.DataFrame(config.rate_table_rows()), hide_index=True, width="stretch")
         st.markdown(
             f"- Basic salary: **{config.currency_symbol}{config.basic_amount:,.0f}** "
             f"(≥{config.basic_required_working_days} days & avg ≥{config.basic_min_avg_parcels_per_day:.0f}/day)\n"
@@ -80,7 +107,9 @@ def main() -> None:
         f"**{end.date() if end is not None else '—'}**"
     )
 
-    tab_batch, tab_driver = st.tabs(["Batch payout", "Single driver"])
+    tab_batch, tab_driver, tab_analytics, tab_invoice = st.tabs(
+        ["Batch payout", "Single driver", "Analytics", "Invoice"]
+    )
 
     with tab_batch:
         st.subheader("Batch payout")
@@ -92,7 +121,7 @@ def main() -> None:
         edited = st.data_editor(
             adj_seed,
             hide_index=True,
-            width='stretch',
+            width="stretch",
             disabled=["driver_id", "driver_name"],
             column_config={
                 "mc_days": st.column_config.NumberColumn("MC days", min_value=0, step=1),
@@ -112,6 +141,7 @@ def main() -> None:
             summary = results_to_summary_frame(results)
             st.session_state["movix_batch_summary"] = summary
             st.session_state["movix_batch_results"] = results
+            st.session_state["movix_adjustments"] = adjustments
 
         summary = st.session_state.get("movix_batch_summary")
         if summary is not None and not summary.empty:
@@ -130,7 +160,7 @@ def main() -> None:
                 "eligibility_reason",
             ]
             present = [c for c in display_cols if c in summary.columns]
-            st.dataframe(summary[present], hide_index=True, width='stretch')
+            st.dataframe(summary[present], hide_index=True, width="stretch")
 
             totals = {
                 "Parcels": int(summary["total_parcels"].sum()),
@@ -149,24 +179,25 @@ def main() -> None:
             st.download_button(
                 "Download batch summary CSV",
                 data=csv_buf.getvalue(),
-                file_name="movix_ic_payout_summary.csv",
+                file_name="movix_okar_payout_summary.csv",
                 mime="text/csv",
             )
 
     with tab_driver:
         st.subheader("Single driver")
-        options = [
-            f"{row.driver_id} — {row.driver_name}" if row.driver_name else str(row.driver_id)
-            for row in drivers.itertuples(index=False)
-        ]
-        choice = st.selectbox("Driver", options)
-        driver_id = choice.split(" — ", 1)[0].strip() if choice else ""
+        options = _driver_options(drivers)
+        choice = st.selectbox("Driver", options, key="single_driver_select")
+        driver_id = _parse_driver_id(choice)
         c1, c2 = st.columns(2)
-        mc_days = c1.number_input("MC / compassionate days", min_value=0, value=0, step=1)
-        absent_days = c2.number_input("Unauthorized absent days", min_value=0, value=0, step=1)
+        mc_days = c1.number_input("MC / compassionate days", min_value=0, value=0, step=1, key="single_mc")
+        absent_days = c2.number_input(
+            "Unauthorized absent days", min_value=0, value=0, step=1, key="single_absent"
+        )
 
         if driver_id:
             result = calc.calculate_driver(df, driver_id, mc_days=mc_days, absent_days=absent_days)
+            st.session_state["movix_single_result"] = result
+
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("Parcels", f"{result.total_parcels:,}")
             m2.metric("Working days", result.working_days)
@@ -193,11 +224,11 @@ def main() -> None:
                     ]
                 )
                 st.markdown("**Commission by weight band**")
-                st.dataframe(band_df, hide_index=True, width='stretch')
+                st.dataframe(band_df, hide_index=True, width="stretch")
 
             if not result.daily_summary.empty:
                 st.markdown("**Daily summary**")
-                st.dataframe(result.daily_summary, hide_index=True, width='stretch')
+                st.dataframe(result.daily_summary, hide_index=True, width="stretch")
 
             if not result.parcel_detail.empty:
                 export_cols = [
@@ -224,9 +255,120 @@ def main() -> None:
                 st.download_button(
                     "Download parcel detail CSV",
                     data=csv_detail.getvalue(),
-                    file_name=f"movix_ic_parcels_{driver_id}.csv",
+                    file_name=f"movix_okar_parcels_{driver_id}.csv",
                     mime="text/csv",
                 )
+
+    with tab_analytics:
+        st.subheader("Analytics")
+        batch_results: List[PayoutResult] = st.session_state.get("movix_batch_results") or []
+        if not batch_results:
+            st.info("Run **Calculate all drivers** in the Batch payout tab to unlock fleet analytics.")
+        else:
+            kpis = fleet_kpi_cards(batch_results)
+            k1, k2, k3, k4, k5 = st.columns(5)
+            k1.metric("Drivers", int(kpis["drivers"]))
+            k2.metric("Parcels", f"{int(kpis['parcels']):,}")
+            k3.metric("Commission", _money(kpis["commission"], config.currency_symbol))
+            k4.metric("Net payout", _money(kpis["net"], config.currency_symbol))
+            k5.metric("Basic qualified", f"{int(kpis['basic_qualified'])}/{int(kpis['drivers'])}")
+
+            fleet_charts = build_fleet_charts(batch_results, config.currency_symbol)
+            if "net_by_driver" in fleet_charts:
+                st.altair_chart(fleet_charts["net_by_driver"], width="stretch")
+            c_left, c_right = st.columns(2)
+            if "parcels_vs_avg" in fleet_charts:
+                c_left.altair_chart(fleet_charts["parcels_vs_avg"], width="stretch")
+            if "weight_mix" in fleet_charts:
+                c_right.altair_chart(fleet_charts["weight_mix"], width="stretch")
+            if "payout_mix" in fleet_charts:
+                st.altair_chart(fleet_charts["payout_mix"], width="stretch")
+
+        st.markdown("---")
+        st.markdown("**Driver deep-dive**")
+        options = _driver_options(drivers)
+        analytics_choice = st.selectbox("Driver for charts", options, key="analytics_driver_select")
+        analytics_driver_id = _parse_driver_id(analytics_choice)
+        if analytics_driver_id:
+            adjustments = st.session_state.get("movix_adjustments") or {}
+            adj = adjustments.get(analytics_driver_id, {})
+            driver_result = _result_lookup(batch_results, analytics_driver_id) or calc.calculate_driver(
+                df,
+                analytics_driver_id,
+                mc_days=int(adj.get("mc_days", 0) or 0),
+                absent_days=int(adj.get("absent_days", 0) or 0),
+            )
+            driver_charts = build_driver_charts(driver_result, config.currency_symbol)
+            if not driver_charts:
+                st.warning("No chart data for this driver.")
+            else:
+                d1, d2 = st.columns(2)
+                if "daily" in driver_charts:
+                    d1.altair_chart(driver_charts["daily"], width="stretch")
+                if "bands" in driver_charts:
+                    d2.altair_chart(driver_charts["bands"], width="stretch")
+
+    with tab_invoice:
+        st.subheader("Invoice")
+        options = _driver_options(drivers)
+        default_index = 0
+        single_result: Optional[PayoutResult] = st.session_state.get("movix_single_result")
+        if single_result is not None:
+            for idx, option in enumerate(options):
+                if option.startswith(f"{single_result.driver_id} ") or option == str(single_result.driver_id):
+                    default_index = idx
+                    break
+
+        invoice_choice = st.selectbox(
+            "Driver for invoice",
+            options,
+            index=default_index if options else 0,
+            key="invoice_driver_select",
+        )
+        invoice_driver_id = _parse_driver_id(invoice_choice)
+        adjustments = st.session_state.get("movix_adjustments") or {}
+        adj = adjustments.get(invoice_driver_id, {})
+        i1, i2 = st.columns(2)
+        invoice_mc = i1.number_input(
+            "MC / compassionate days",
+            min_value=0,
+            value=int(adj.get("mc_days", 0) or 0),
+            step=1,
+            key="invoice_mc_days",
+        )
+        invoice_absent = i2.number_input(
+            "Unauthorized absent days",
+            min_value=0,
+            value=int(adj.get("absent_days", 0) or 0),
+            step=1,
+            key="invoice_absent_days",
+        )
+
+        if invoice_driver_id:
+            batch_results = st.session_state.get("movix_batch_results") or []
+            invoice_result = calc.calculate_driver(
+                df,
+                invoice_driver_id,
+                mc_days=invoice_mc,
+                absent_days=invoice_absent,
+            )
+            # Keep batch result only when adjustments match zero defaults and no overrides needed
+            cached = _result_lookup(batch_results, invoice_driver_id)
+            if (
+                cached
+                and int(adj.get("mc_days", 0) or 0) == invoice_mc
+                and int(adj.get("absent_days", 0) or 0) == invoice_absent
+            ):
+                invoice_result = cached
+
+            invoice_html = build_invoice_html(invoice_result, config)
+            components.html(invoice_html, height=1100, scrolling=True)
+            st.download_button(
+                "Download invoice (HTML)",
+                data=invoice_html,
+                file_name=f"movix_okar_invoice_{invoice_driver_id}_{invoice_result.period_start or 'na'}.html",
+                mime="text/html",
+            )
 
 
 if __name__ == "__main__":
