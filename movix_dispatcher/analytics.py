@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 import altair as alt
 import pandas as pd
 
+from . import brand
 from .calculator import PayoutResult, results_to_summary_frame
 from .names import clean_driver_name
 
@@ -54,7 +55,7 @@ def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM")
             y=alt.Y("label:N", sort="-x", title="Driver"),
             color=alt.condition(
                 alt.datum.qualifies_for_basic,
-                alt.value("#0f766e"),
+                alt.value(brand.TEAL),
                 alt.value("#94a3b8"),
             ),
             tooltip=[
@@ -78,7 +79,7 @@ def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM")
             color=alt.Color(
                 "qualifies_for_basic:N",
                 title="Basic eligible",
-                scale=alt.Scale(range=["#94a3b8", "#0f766e"]),
+                scale=alt.Scale(range=["#94a3b8", brand.TEAL]),
             ),
             tooltip=[
                 alt.Tooltip("driver_id:N", title="Driver ID"),
@@ -103,7 +104,7 @@ def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM")
             .encode(
                 x=alt.X("weight_band:N", title="Weight band", sort="-y"),
                 y=alt.Y("parcels:Q", title="Parcels"),
-                color=alt.value("#0f766e"),
+                color=alt.value(brand.BLUE),
                 tooltip=[
                     alt.Tooltip("weight_band:N", title="Band"),
                     alt.Tooltip("parcels:Q", title="Parcels", format=","),
@@ -137,7 +138,7 @@ def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM")
                     title="Component",
                     scale=alt.Scale(
                         domain=["Commission", "Basic", "Attendance"],
-                        range=["#0f766e", "#0369a1", "#c2410c"],
+                        range=[brand.TEAL, brand.BLUE, brand.YELLOW],
                     ),
                 ),
                 tooltip=[
@@ -159,7 +160,7 @@ def build_driver_charts(result: PayoutResult, currency_symbol: str = "RM") -> Di
         work = daily.copy()
         work["service_date"] = pd.to_datetime(work["service_date"])
         base = alt.Chart(work).encode(x=alt.X("service_date:T", title="Date"))
-        parcels = base.mark_bar(color="#0f766e", cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
+        parcels = base.mark_bar(color=brand.TEAL, cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
             y=alt.Y("parcels:Q", title="Parcels"),
             tooltip=[
                 alt.Tooltip("service_date:T", title="Date"),
@@ -167,7 +168,7 @@ def build_driver_charts(result: PayoutResult, currency_symbol: str = "RM") -> Di
                 alt.Tooltip("commission:Q", title="Commission", format=",.2f"),
             ],
         )
-        commission = base.mark_line(color="#c2410c", point=True).encode(
+        commission = base.mark_line(color=brand.YELLOW, point=True).encode(
             y=alt.Y("commission:Q", title=f"Commission ({currency_symbol})"),
             tooltip=[
                 alt.Tooltip("service_date:T", title="Date"),

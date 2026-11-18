@@ -8,3 +8,6 @@ __pycache__/
 .env.*
 *.xlsx
 .streamlit/secrets.toml
+assets/poster.png
+assets/movix-logo-crop.png
+assets/*.pdf.png

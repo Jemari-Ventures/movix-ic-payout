@@ -6,6 +6,7 @@ from datetime import date
 from html import escape
 from typing import Optional
 
+from . import brand
 from .calculator import PayoutResult
 from .config import MovixConfig
 from .names import clean_driver_name
@@ -18,13 +19,14 @@ def _money(amount: float, symbol: str) -> str:
 def build_invoice_html(
     result: PayoutResult,
     config: Optional[MovixConfig] = None,
-    company_name: str = "Movix Logistics",
-    hub_name: str = "OS Karangan (OKAR)",
+    company_name: str = brand.COMPANY_NAME,
+    hub_name: str = brand.HUB_NAME,
     invoice_date: Optional[date] = None,
 ) -> str:
     """Build a printable HTML invoice for one courier payout result."""
     cfg = config or MovixConfig.load()
     symbol = cfg.currency_symbol
+    logo_uri = brand.logo_data_uri(mark=False)
     issued = (invoice_date or date.today()).isoformat()
     courier = clean_driver_name(result.driver_name) or "Courier"
     period = " — ".join(
@@ -64,14 +66,17 @@ def build_invoice_html(
   <title>Invoice — {escape(courier)} ({escape(result.driver_id)})</title>
   <style>
     :root {{
-      --ink: #0f172a;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --brand: #0f766e;
-      --brand-soft: #ccfbf1;
-      --surface: #ffffff;
-      --bg: #f8fafc;
-      --danger: #b91c1c;
+      --ink: {brand.INK};
+      --muted: {brand.MUTED};
+      --line: {brand.LINE};
+      --brand: {brand.TEAL};
+      --brand-navy: {brand.NAVY};
+      --brand-blue: {brand.BLUE};
+      --brand-yellow: {brand.YELLOW};
+      --brand-soft: {brand.SOFT_TEAL};
+      --surface: {brand.SURFACE};
+      --bg: {brand.BACKGROUND};
+      --danger: {brand.DANGER};
     }}
     * {{ box-sizing: border-box; }}
     body {{
@@ -88,28 +93,34 @@ def build_invoice_html(
       border: 1px solid var(--line);
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      box-shadow: 0 10px 30px rgba(18, 48, 74, 0.08);
     }}
     .hero {{
-      padding: 28px 32px;
-      background:
-        linear-gradient(135deg, rgba(15,118,110,0.95), rgba(15,118,110,0.75)),
-        radial-gradient(circle at top right, #99f6e4, transparent 55%);
+      padding: 24px 32px;
+      background: linear-gradient(135deg, {brand.NAVY} 0%, {brand.NAVY_DEEP} 72%, #0c3a57 100%);
       color: white;
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: auto 1fr auto;
       gap: 16px;
+      align-items: center;
     }}
-    .brand {{ font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }}
-    .sub {{ opacity: 0.9; margin-top: 6px; font-size: 14px; }}
+    .hero-logo {{
+      height: 52px;
+      width: auto;
+      background: white;
+      border-radius: 10px;
+      padding: 6px 10px;
+    }}
+    .brand {{ font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }}
+    .sub {{ opacity: 0.92; margin-top: 6px; font-size: 14px; }}
     .badge {{
       align-self: start;
-      background: rgba(255,255,255,0.16);
-      border: 1px solid rgba(255,255,255,0.28);
+      background: {brand.YELLOW};
+      color: {brand.NAVY};
       border-radius: 999px;
       padding: 8px 14px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }}
@@ -124,10 +135,10 @@ def build_invoice_html(
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 14px 16px;
-      background: var(--bg);
+      background: {brand.SOFT_BLUE};
     }}
     .meta .label {{ color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }}
-    .meta .value {{ margin-top: 4px; font-weight: 650; font-size: 15px; }}
+    .meta .value {{ margin-top: 4px; font-weight: 650; font-size: 15px; color: var(--brand-navy); }}
     h2 {{
       margin: 28px 0 12px;
       font-size: 15px;
@@ -144,8 +155,8 @@ def build_invoice_html(
     }}
     th, td {{ padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }}
     th {{
-      background: var(--brand-soft);
-      color: var(--brand);
+      background: {brand.BLUE};
+      color: white;
       text-align: left;
       font-size: 12px;
       text-transform: uppercase;
@@ -173,7 +184,7 @@ def build_invoice_html(
       margin-top: 4px;
       font-size: 20px;
       font-weight: 750;
-      color: var(--brand);
+      color: var(--brand-navy);
     }}
     .row.deduct .amount {{ color: var(--danger); }}
     .note {{
@@ -181,7 +192,7 @@ def build_invoice_html(
       padding: 14px 16px;
       border-radius: 12px;
       background: var(--brand-soft);
-      color: #115e59;
+      color: {brand.NAVY};
       font-size: 13px;
     }}
     .footer {{
@@ -198,6 +209,7 @@ def build_invoice_html(
 <body>
   <div class="sheet">
     <div class="hero">
+      <img class="hero-logo" src="{logo_uri}" alt="{escape(company_name)}" />
       <div>
         <div class="brand">{escape(company_name)}</div>
         <div class="sub">{escape(hub_name)} · Courier payout invoice</div>

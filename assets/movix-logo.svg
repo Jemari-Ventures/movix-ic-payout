@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" role="img" aria-label="Movix Logistics">
+  <!-- Twin forward-slash M mark (speed motif from Movix identity) -->
+  <g transform="translate(8,10)">
+    <rect x="8" y="8" width="22" height="92" rx="8" transform="skewX(-18)" fill="#F5C518"/>
+    <rect x="42" y="8" width="22" height="92" rx="8" transform="skewX(-18)" fill="#F5C518"/>
+  </g>
+  <text x="118" y="72" font-family="Arial Black, Helvetica Neue, Arial, sans-serif" font-size="58" font-weight="800" fill="#12304A" letter-spacing="-1.5">movix</text>
+  <text x="122" y="98" font-family="Helvetica Neue, Arial, sans-serif" font-size="15" font-weight="700" fill="#1476B7" letter-spacing="5">LOGISTICS</text>
+</svg>

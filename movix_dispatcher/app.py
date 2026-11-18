@@ -16,6 +16,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+from movix_dispatcher import brand
 from movix_dispatcher.analytics import (
     build_driver_charts,
     build_fleet_charts,
@@ -27,6 +28,8 @@ from movix_dispatcher.ingest import date_bounds, driver_directory, load_sheet1
 from movix_dispatcher.invoice import build_invoice_html
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config_movix.json"
+LOGO_PATH = Path(__file__).resolve().parent.parent / "assets" / "movix-logo.png"
+LOGO_MARK_PATH = Path(__file__).resolve().parent.parent / "assets" / "movix-logo-mark.png"
 
 
 def _money(amount: float, symbol: str) -> str:
@@ -56,14 +59,30 @@ def _result_lookup(results: Optional[List[PayoutResult]], driver_id: str) -> Opt
 def main() -> None:
     st.set_page_config(
         page_title="Movix OKAR Payout",
-        page_icon=None,
+        page_icon=str(LOGO_MARK_PATH) if LOGO_MARK_PATH.exists() else None,
         layout="wide",
     )
-    st.title("Movix OKAR Courier Payout")
-    st.caption(
-        "Standalone calculator for OS Karangan (OKAR) couriers. "
-        "Uses Sheet1 of the IC Payment export and the Movix weight / basic / attendance rate card."
-    )
+    st.markdown(brand.streamlit_theme_css(), unsafe_allow_html=True)
+
+    if LOGO_PATH.exists():
+        st.markdown(
+            f"""
+            <div class="movix-hero">
+              <img src="{brand.logo_data_uri()}" alt="Movix Logistics" />
+              <div class="copy">
+                <h1>OKAR Courier Payout</h1>
+                <p>OS Karangan · Movix Logistics rate card · Sheet1 IC Payment export</p>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.title("Movix OKAR Courier Payout")
+        st.caption(
+            "Standalone calculator for OS Karangan (OKAR) couriers. "
+            "Uses Sheet1 of the IC Payment export and the Movix weight / basic / attendance rate card."
+        )
 
     config = MovixConfig.load(CONFIG_PATH)
     calc = MovixPayoutCalculator(config)
