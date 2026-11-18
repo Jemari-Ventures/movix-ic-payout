@@ -275,14 +275,14 @@ def main() -> None:
 
             fleet_charts = build_fleet_charts(batch_results, config.currency_symbol)
             if "net_by_driver" in fleet_charts:
-                st.altair_chart(fleet_charts["net_by_driver"], width="stretch")
+                st.altair_chart(fleet_charts["net_by_driver"], use_container_width=True)
             c_left, c_right = st.columns(2)
             if "parcels_vs_avg" in fleet_charts:
-                c_left.altair_chart(fleet_charts["parcels_vs_avg"], width="stretch")
+                c_left.altair_chart(fleet_charts["parcels_vs_avg"], use_container_width=True)
             if "weight_mix" in fleet_charts:
-                c_right.altair_chart(fleet_charts["weight_mix"], width="stretch")
+                c_right.altair_chart(fleet_charts["weight_mix"], use_container_width=True)
             if "payout_mix" in fleet_charts:
-                st.altair_chart(fleet_charts["payout_mix"], width="stretch")
+                st.altair_chart(fleet_charts["payout_mix"], use_container_width=True)
 
         st.markdown("---")
         st.markdown("**Driver deep-dive**")
@@ -304,9 +304,9 @@ def main() -> None:
             else:
                 d1, d2 = st.columns(2)
                 if "daily" in driver_charts:
-                    d1.altair_chart(driver_charts["daily"], width="stretch")
+                    d1.altair_chart(driver_charts["daily"], use_container_width=True)
                 if "bands" in driver_charts:
-                    d2.altair_chart(driver_charts["bands"], width="stretch")
+                    d2.altair_chart(driver_charts["bands"], use_container_width=True)
 
     with tab_invoice:
         st.subheader("Invoice")
