@@ -8,6 +8,7 @@ from typing import BinaryIO, Optional, Union, Tuple
 import pandas as pd
 
 from .config import MovixConfig
+from .names import clean_driver_name
 from .schema import missing_required, rename_to_canonical, resolve_columns
 
 Source = Union[str, Path, BinaryIO]
@@ -58,7 +59,7 @@ def normalize_frame(df: pd.DataFrame, config: Optional[MovixConfig] = None) -> p
     out["chargeable_weight"] = pd.to_numeric(out["chargeable_weight"], errors="coerce")
     out["driver_id"] = out["driver_id"].apply(_clean_driver_id)
     if "driver_name" in out.columns:
-        out["driver_name"] = out["driver_name"].astype(str).str.strip()
+        out["driver_name"] = out["driver_name"].map(clean_driver_name)
     else:
         out["driver_name"] = ""
 
@@ -113,8 +114,8 @@ def driver_directory(df: pd.DataFrame) -> pd.DataFrame:
 
 def _first_non_empty(series: pd.Series) -> str:
     for value in series:
-        text = str(value).strip()
-        if text and text.lower() != "nan":
+        text = clean_driver_name(value)
+        if text:
             return text
     return ""
 

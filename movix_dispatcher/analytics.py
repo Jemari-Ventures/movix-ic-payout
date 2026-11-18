@@ -8,6 +8,7 @@ import altair as alt
 import pandas as pd
 
 from .calculator import PayoutResult, results_to_summary_frame
+from .names import clean_driver_name
 
 
 def summary_frame(results: List[PayoutResult]) -> pd.DataFrame:
@@ -40,8 +41,8 @@ def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM")
     work = summary.copy()
     work["label"] = work.apply(
         lambda r: f"{r['driver_id']}"
-        if not str(r.get("driver_name") or "").strip()
-        else f"{r['driver_id']} · {str(r['driver_name']).split(']')[-1].strip()[:24]}",
+        if not clean_driver_name(r.get("driver_name"))
+        else f"{r['driver_id']} · {clean_driver_name(r.get('driver_name'))[:24]}",
         axis=1,
     )
 

@@ -8,18 +8,11 @@ from typing import Optional
 
 from .calculator import PayoutResult
 from .config import MovixConfig
+from .names import clean_driver_name
 
 
 def _money(amount: float, symbol: str) -> str:
     return f"{escape(symbol)}{amount:,.2f}"
-
-
-def _clean_name(name: str) -> str:
-    text = (name or "").strip()
-    # Strip leading "[id]" prefixes common in SPX driver names
-    if text.startswith("[") and "]" in text:
-        text = text.split("]", 1)[1].strip()
-    return text or "Courier"
 
 
 def build_invoice_html(
@@ -33,7 +26,7 @@ def build_invoice_html(
     cfg = config or MovixConfig.load()
     symbol = cfg.currency_symbol
     issued = (invoice_date or date.today()).isoformat()
-    courier = _clean_name(result.driver_name)
+    courier = clean_driver_name(result.driver_name) or "Courier"
     period = " — ".join(
         part for part in [result.period_start or "—", result.period_end or "—"] if part
     )

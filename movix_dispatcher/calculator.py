@@ -9,6 +9,7 @@ import pandas as pd
 
 from .config import MovixConfig
 from .eligibility import EligibilityResult, evaluate_eligibility
+from .names import clean_driver_name
 from .rates import apply_commission_rates
 
 
@@ -122,8 +123,8 @@ class MovixPayoutCalculator:
         priced = apply_commission_rates(scoped, cfg)
         driver_name = ""
         for value in priced["driver_name"]:
-            text = str(value).strip()
-            if text and text.lower() != "nan":
+            text = clean_driver_name(value)
+            if text:
                 driver_name = text
                 break
 
