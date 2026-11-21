@@ -18,6 +18,8 @@ import streamlit.components.v1 as components
 
 from movix_dispatcher import brand
 from movix_dispatcher.analytics import (
+    altair_available,
+    altair_error,
     build_driver_charts,
     build_fleet_charts,
     fleet_kpi_cards,
@@ -293,16 +295,23 @@ def main() -> None:
             k4.metric("Net payout", _money(kpis["net"], config.currency_symbol))
             k5.metric("Basic qualified", f"{int(kpis['basic_qualified'])}/{int(kpis['drivers'])}")
 
-            fleet_charts = build_fleet_charts(batch_results, config.currency_symbol)
-            if "net_by_driver" in fleet_charts:
-                st.altair_chart(fleet_charts["net_by_driver"], use_container_width=True)
-            c_left, c_right = st.columns(2)
-            if "parcels_vs_avg" in fleet_charts:
-                c_left.altair_chart(fleet_charts["parcels_vs_avg"], use_container_width=True)
-            if "weight_mix" in fleet_charts:
-                c_right.altair_chart(fleet_charts["weight_mix"], use_container_width=True)
-            if "payout_mix" in fleet_charts:
-                st.altair_chart(fleet_charts["payout_mix"], use_container_width=True)
+            if not altair_available():
+                st.warning(
+                    "Charts are unavailable in this runtime "
+                    f"({altair_error() or 'Altair import failed'}). "
+                    "KPIs above still work. Redeploy with Python 3.12."
+                )
+            else:
+                fleet_charts = build_fleet_charts(batch_results, config.currency_symbol)
+                if "net_by_driver" in fleet_charts:
+                    st.altair_chart(fleet_charts["net_by_driver"], use_container_width=True)
+                c_left, c_right = st.columns(2)
+                if "parcels_vs_avg" in fleet_charts:
+                    c_left.altair_chart(fleet_charts["parcels_vs_avg"], use_container_width=True)
+                if "weight_mix" in fleet_charts:
+                    c_right.altair_chart(fleet_charts["weight_mix"], use_container_width=True)
+                if "payout_mix" in fleet_charts:
+                    st.altair_chart(fleet_charts["payout_mix"], use_container_width=True)
 
         st.markdown("---")
         st.markdown("**Driver deep-dive**")
@@ -318,15 +327,18 @@ def main() -> None:
                 mc_days=int(adj.get("mc_days", 0) or 0),
                 absent_days=int(adj.get("absent_days", 0) or 0),
             )
-            driver_charts = build_driver_charts(driver_result, config.currency_symbol)
-            if not driver_charts:
-                st.warning("No chart data for this driver.")
+            if not altair_available():
+                st.info("Driver charts need Altair on Python 3.12+. KPI/invoice tabs remain usable.")
             else:
-                d1, d2 = st.columns(2)
-                if "daily" in driver_charts:
-                    d1.altair_chart(driver_charts["daily"], use_container_width=True)
-                if "bands" in driver_charts:
-                    d2.altair_chart(driver_charts["bands"], use_container_width=True)
+                driver_charts = build_driver_charts(driver_result, config.currency_symbol)
+                if not driver_charts:
+                    st.warning("No chart data for this driver.")
+                else:
+                    d1, d2 = st.columns(2)
+                    if "daily" in driver_charts:
+                        d1.altair_chart(driver_charts["daily"], use_container_width=True)
+                    if "bands" in driver_charts:
+                        d2.altair_chart(driver_charts["bands"], use_container_width=True)
 
     with tab_invoice:
         st.subheader("Invoice")

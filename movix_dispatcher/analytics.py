@@ -2,14 +2,41 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-import altair as alt
 import pandas as pd
 
 from . import brand
 from .calculator import PayoutResult, results_to_summary_frame
 from .names import clean_driver_name
+
+_ALTAIR_ERROR: Optional[str] = None
+
+
+def _altair():
+    """Lazy-import Altair so the rest of the app still boots if charts are broken."""
+    global _ALTAIR_ERROR
+    try:
+        import altair as alt
+
+        _ALTAIR_ERROR = None
+        return alt
+    except Exception as exc:  # noqa: BLE001
+        _ALTAIR_ERROR = str(exc)
+        raise
+
+
+def altair_available() -> bool:
+    try:
+        _altair()
+        return True
+    except Exception:
+        return False
+
+
+def altair_error() -> Optional[str]:
+    altair_available()
+    return _ALTAIR_ERROR
 
 
 def summary_frame(results: List[PayoutResult]) -> pd.DataFrame:
@@ -33,9 +60,10 @@ def fleet_weight_band_frame(results: List[PayoutResult]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM") -> Dict[str, alt.Chart]:
+def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM") -> Dict[str, Any]:
+    alt = _altair()
     summary = summary_frame(results)
-    charts: Dict[str, alt.Chart] = {}
+    charts: Dict[str, Any] = {}
     if summary.empty:
         return charts
 
@@ -153,8 +181,9 @@ def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM")
     return charts
 
 
-def build_driver_charts(result: PayoutResult, currency_symbol: str = "RM") -> Dict[str, alt.Chart]:
-    charts: Dict[str, alt.Chart] = {}
+def build_driver_charts(result: PayoutResult, currency_symbol: str = "RM") -> Dict[str, Any]:
+    alt = _altair()
+    charts: Dict[str, Any] = {}
     daily = result.daily_summary
     if daily is not None and not daily.empty:
         work = daily.copy()
