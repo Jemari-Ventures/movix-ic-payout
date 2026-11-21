@@ -71,7 +71,7 @@ def main() -> None:
               <img src="{brand.logo_data_uri(header=True)}" alt="Movix Logistics (M) Sdn. Bhd" />
               <div class="copy">
                 <h1>OKAR Courier Payout</h1>
-                <p>Movix Logistics (M) Sdn. Bhd · OS Karangan (OKAR) · Sheet1 IC Payment export</p>
+                <p>Movix Logistics (M) Sdn. Bhd · OS Karangan (OKAR)</p>
               </div>
               <div class="badge">OKAR</div>
             </div>
