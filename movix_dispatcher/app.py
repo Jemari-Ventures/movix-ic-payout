@@ -68,11 +68,12 @@ def main() -> None:
         st.markdown(
             f"""
             <div class="movix-hero">
-              <img src="{brand.logo_data_uri()}" alt="Movix Logistics" />
+              <img src="{brand.logo_data_uri()}" alt="Movix Logistics (M) Sdn. Bhd" />
               <div class="copy">
                 <h1>OKAR Courier Payout</h1>
-                <p>OS Karangan · Movix Logistics rate card · Sheet1 IC Payment export</p>
+                <p>Movix Logistics (M) Sdn. Bhd · OS Karangan (OKAR) · Sheet1 IC Payment export</p>
               </div>
+              <div class="badge">OKAR</div>
             </div>
             """,
             unsafe_allow_html=True,

@@ -1,4 +1,4 @@
-"""Movix Logistics brand tokens from the OKAR courier incentive poster."""
+"""Movix Logistics brand tokens from the Movix Express recruitment poster."""
 
 from __future__ import annotations
 
@@ -6,23 +6,33 @@ from pathlib import Path
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 
-# Poster palette (sampled from Movix_Courier_Payment_Incentive_Poster_A4)
-NAVY = "#12304A"
-NAVY_DEEP = "#0A2944"
-TEAL = "#16A085"
-BLUE = "#1476B7"
-YELLOW = "#F5C518"
-SOFT_TEAL = "#EAF4EC"
-SOFT_BLUE = "#EAF2FB"
-SOFT_CREAM = "#FFF3DF"
-INK = "#12304A"
-MUTED = "#54697C"
-LINE = "#D7E0E8"
+# Sampled from Movix Express recruitment poster
+PURPLE = "#2C1760"
+PURPLE_DEEP = "#230E55"
+PURPLE_MID = "#41227E"
+PURPLE_LIGHT = "#553299"
+YELLOW = "#FED504"
+YELLOW_SOFT = "#FFF6C2"
+SOFT_LAVENDER = "#F3F2F6"
+SOFT_PURPLE = "#EDEAF5"
+INK = "#1A1228"
+MUTED = "#5B5670"
+LINE = "#D8D4E4"
 SURFACE = "#FFFFFF"
-BACKGROUND = "#F5F7FA"
+BACKGROUND = "#F7F6FA"
 DANGER = "#B91C1C"
 
-COMPANY_NAME = "Movix Logistics"
+# Back-compat aliases used by older chart/invoice references
+NAVY = PURPLE
+NAVY_DEEP = PURPLE_DEEP
+TEAL = PURPLE_MID
+BLUE = PURPLE_LIGHT
+SOFT_TEAL = SOFT_PURPLE
+SOFT_BLUE = SOFT_LAVENDER
+SOFT_CREAM = YELLOW_SOFT
+
+COMPANY_NAME = "Movix Logistics (M) Sdn. Bhd"
+COMPANY_SHORT = "Movix Logistics"
 HUB_NAME = "OS Karangan (OKAR)"
 FACEBOOK_URL = "https://www.facebook.com/p/Movix-Logistics-Sdn-Bhd-61596114287063/"
 
@@ -33,22 +43,21 @@ LOGO_MARK_PNG = ASSETS_DIR / "movix-logo-mark.png"
 
 
 def streamlit_theme_css() -> str:
-    """Custom Streamlit chrome aligned to the poster."""
+    """Custom Streamlit chrome aligned to the Movix Express poster."""
     return f"""
     <style>
       :root {{
-        --movix-navy: {NAVY};
-        --movix-teal: {TEAL};
-        --movix-blue: {BLUE};
+        --movix-purple: {PURPLE};
         --movix-yellow: {YELLOW};
+        --movix-lavender: {SOFT_LAVENDER};
       }}
       .stApp {{
         background:
-          radial-gradient(circle at top right, {SOFT_BLUE} 0%, transparent 42%),
-          linear-gradient(180deg, {SOFT_TEAL} 0%, {BACKGROUND} 36%, {BACKGROUND} 100%);
+          radial-gradient(circle at top right, {SOFT_PURPLE} 0%, transparent 45%),
+          linear-gradient(180deg, {SOFT_LAVENDER} 0%, {BACKGROUND} 40%, {BACKGROUND} 100%);
       }}
       [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {NAVY} 0%, {NAVY_DEEP} 100%);
+        background: linear-gradient(180deg, {PURPLE} 0%, {PURPLE_DEEP} 100%);
       }}
       [data-testid="stSidebar"] * {{
         color: #F8FAFC !important;
@@ -60,32 +69,36 @@ def streamlit_theme_css() -> str:
         color: {INK} !important;
       }}
       h1, h2, h3 {{
-        color: {NAVY} !important;
+        color: {PURPLE} !important;
         letter-spacing: -0.02em;
       }}
       div[data-testid="stMetricValue"] {{
-        color: {NAVY} !important;
+        color: {PURPLE} !important;
       }}
       .stButton > button[kind="primary"],
       .stButton > button[data-testid="baseButton-primary"] {{
-        background: {TEAL};
-        border-color: {TEAL};
+        background: {PURPLE};
+        border-color: {PURPLE};
         color: white;
       }}
       .stButton > button[kind="primary"]:hover {{
-        background: #12856f;
-        border-color: #12856f;
+        background: {PURPLE_MID};
+        border-color: {PURPLE_MID};
       }}
       .stTabs [aria-selected="true"] {{
-        color: {NAVY} !important;
-        border-bottom-color: {TEAL} !important;
+        color: {PURPLE} !important;
+        border-bottom-color: {YELLOW} !important;
         font-weight: 700;
       }}
       .movix-hero {{
         display: flex;
         align-items: center;
         gap: 18px;
-        margin: 0 0 8px 0;
+        margin: 0 0 10px 0;
+        padding: 14px 16px;
+        border: 1px solid {LINE};
+        border-radius: 16px;
+        background: linear-gradient(90deg, {SURFACE} 0%, {SOFT_LAVENDER} 100%);
       }}
       .movix-hero img {{
         height: 56px;
@@ -93,11 +106,23 @@ def streamlit_theme_css() -> str:
       }}
       .movix-hero .copy h1 {{
         margin: 0 !important;
-        font-size: 1.8rem !important;
+        font-size: 1.75rem !important;
+        color: {PURPLE} !important;
       }}
       .movix-hero .copy p {{
         margin: 4px 0 0 0;
         color: {MUTED};
+      }}
+      .movix-hero .badge {{
+        margin-left: auto;
+        background: {YELLOW};
+        color: {PURPLE};
+        font-weight: 800;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        border-radius: 999px;
+        padding: 8px 12px;
       }}
     </style>
     """

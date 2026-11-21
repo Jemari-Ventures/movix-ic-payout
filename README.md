@@ -1,6 +1,6 @@
 # Movix IC Payout
 
-Standalone Streamlit calculator for **Movix Logistics OS Karangan (OKAR)** courier payment.
+Standalone Streamlit calculator for **Movix Logistics (M) Sdn. Bhd** — OS Karangan (OKAR) courier payment.
 
 Extracted from the legacy hub payout tools so this product has a clean repo, deploy path, and rate card.
 
