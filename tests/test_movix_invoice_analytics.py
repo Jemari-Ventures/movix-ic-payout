@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from movix_dispatcher.analytics import build_driver_charts, build_fleet_charts, fleet_kpi_cards
+from movix_dispatcher.analytics import driver_chart_frames, fleet_chart_frames, fleet_kpi_cards
 from movix_dispatcher.calculator import MovixPayoutCalculator
 from movix_dispatcher.config import MovixConfig
 from movix_dispatcher.ingest import normalize_frame
@@ -57,18 +57,20 @@ def test_invoice_html_contains_net_and_okar():
     assert "Net payable" in html
     assert f"{result.net_payout:,.2f}" in html
     assert "1001" in html
+    assert "Movix Logistics (M) Sdn. Bhd" in html
 
 
-def test_analytics_charts_and_kpis():
+def test_analytics_frames_and_kpis():
     cfg = MovixConfig.load()
     df = normalize_frame(_sample_rows(), cfg)
     results = MovixPayoutCalculator(cfg).calculate_all(df)
     kpis = fleet_kpi_cards(results)
     assert kpis["drivers"] == 2
     assert kpis["parcels"] == 3
-    fleet = build_fleet_charts(results, cfg.currency_symbol)
+    fleet = fleet_chart_frames(results)
     assert "net_by_driver" in fleet
-    assert "parcels_vs_avg" in fleet
-    driver_charts = build_driver_charts(results[0], cfg.currency_symbol)
-    assert "daily" in driver_charts
-    assert "bands" in driver_charts
+    assert "volume" in fleet
+    assert "composition" in fleet
+    driver_frames = driver_chart_frames(results[0])
+    assert "daily" in driver_frames
+    assert "bands" in driver_frames

@@ -13,16 +13,16 @@ PURPLE_MID = "#41227E"
 PURPLE_LIGHT = "#553299"
 YELLOW = "#FED504"
 YELLOW_SOFT = "#FFF6C2"
-SOFT_LAVENDER = "#F3F2F6"
-SOFT_PURPLE = "#EDEAF5"
+SOFT_LAVENDER = "#F7F6FA"
+SOFT_PURPLE = "#EFEBF8"
 INK = "#1A1228"
 MUTED = "#5B5670"
-LINE = "#D8D4E4"
+LINE = "#E4E0EE"
 SURFACE = "#FFFFFF"
-BACKGROUND = "#F7F6FA"
+BACKGROUND = "#FFFFFF"
 DANGER = "#B91C1C"
 
-# Back-compat aliases used by older chart/invoice references
+# Back-compat aliases
 NAVY = PURPLE
 NAVY_DEEP = PURPLE_DEEP
 TEAL = PURPLE_MID
@@ -43,30 +43,35 @@ LOGO_MARK_PNG = ASSETS_DIR / "movix-logo-mark.png"
 
 
 def streamlit_theme_css() -> str:
-    """Custom Streamlit chrome aligned to the Movix Express poster."""
+    """Light theme: white app/sidebar, violet header band, yellow accents."""
     return f"""
     <style>
       :root {{
         --movix-purple: {PURPLE};
         --movix-yellow: {YELLOW};
-        --movix-lavender: {SOFT_LAVENDER};
+        --movix-ink: {INK};
       }}
-      .stApp {{
-        background:
-          radial-gradient(circle at top right, {SOFT_PURPLE} 0%, transparent 45%),
-          linear-gradient(180deg, {SOFT_LAVENDER} 0%, {BACKGROUND} 40%, {BACKGROUND} 100%);
+      html, body, .stApp {{
+        background: {BACKGROUND} !important;
+        color: {INK};
+      }}
+      [data-testid="stHeader"] {{
+        background: {SURFACE} !important;
       }}
       [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {PURPLE} 0%, {PURPLE_DEEP} 100%);
+        background: {SURFACE} !important;
+        border-right: 1px solid {LINE};
       }}
       [data-testid="stSidebar"] * {{
-        color: #F8FAFC !important;
+        color: {INK} !important;
       }}
       [data-testid="stSidebar"] .stMarkdown strong {{
-        color: {YELLOW} !important;
+        color: {PURPLE} !important;
       }}
-      [data-testid="stSidebar"] div[data-testid="stDataFrame"] * {{
-        color: {INK} !important;
+      [data-testid="stSidebar"] h1,
+      [data-testid="stSidebar"] h2,
+      [data-testid="stSidebar"] h3 {{
+        color: {PURPLE} !important;
       }}
       h1, h2, h3 {{
         color: {PURPLE} !important;
@@ -94,24 +99,28 @@ def streamlit_theme_css() -> str:
         display: flex;
         align-items: center;
         gap: 18px;
-        margin: 0 0 10px 0;
-        padding: 14px 16px;
-        border: 1px solid {LINE};
+        margin: 0 0 14px 0;
+        padding: 18px 20px;
         border-radius: 16px;
-        background: linear-gradient(90deg, {SURFACE} 0%, {SOFT_LAVENDER} 100%);
+        background: linear-gradient(135deg, {PURPLE} 0%, {PURPLE_MID} 55%, {PURPLE_DEEP} 100%);
+        box-shadow: 0 10px 24px rgba(44, 23, 96, 0.18);
       }}
       .movix-hero img {{
         height: 56px;
         width: auto;
+        background: white;
+        border-radius: 10px;
+        padding: 6px 10px;
       }}
       .movix-hero .copy h1 {{
         margin: 0 !important;
         font-size: 1.75rem !important;
-        color: {PURPLE} !important;
+        color: {YELLOW} !important;
       }}
       .movix-hero .copy p {{
         margin: 4px 0 0 0;
-        color: {MUTED};
+        color: #FFFFFF !important;
+        opacity: 0.92;
       }}
       .movix-hero .badge {{
         margin-left: auto;

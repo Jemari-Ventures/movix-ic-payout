@@ -1,42 +1,13 @@
-"""Analytics charts for Movix OKAR payouts."""
+"""Analytics helpers for Movix OKAR payouts (Streamlit-native charts, no Altair)."""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 import pandas as pd
 
-from . import brand
 from .calculator import PayoutResult, results_to_summary_frame
 from .names import clean_driver_name
-
-_ALTAIR_ERROR: Optional[str] = None
-
-
-def _altair():
-    """Lazy-import Altair so the rest of the app still boots if charts are broken."""
-    global _ALTAIR_ERROR
-    try:
-        import altair as alt
-
-        _ALTAIR_ERROR = None
-        return alt
-    except Exception as exc:  # noqa: BLE001
-        _ALTAIR_ERROR = str(exc)
-        raise
-
-
-def altair_available() -> bool:
-    try:
-        _altair()
-        return True
-    except Exception:
-        return False
-
-
-def altair_error() -> Optional[str]:
-    altair_available()
-    return _ALTAIR_ERROR
 
 
 def summary_frame(results: List[PayoutResult]) -> pd.DataFrame:
@@ -60,12 +31,12 @@ def fleet_weight_band_frame(results: List[PayoutResult]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM") -> Dict[str, Any]:
-    alt = _altair()
+def fleet_chart_frames(results: List[PayoutResult]) -> Dict[str, pd.DataFrame]:
+    """Return dataframes ready for st.bar_chart / st.line_chart."""
     summary = summary_frame(results)
-    charts: Dict[str, Any] = {}
+    frames: Dict[str, pd.DataFrame] = {}
     if summary.empty:
-        return charts
+        return frames
 
     work = summary.copy()
     work["label"] = work.apply(
@@ -75,139 +46,44 @@ def build_fleet_charts(results: List[PayoutResult], currency_symbol: str = "RM")
         axis=1,
     )
 
-    charts["net_by_driver"] = (
-        alt.Chart(work)
-        .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
-        .encode(
-            x=alt.X("net_payout:Q", title=f"Net payout ({currency_symbol})"),
-            y=alt.Y("label:N", sort="-x", title="Driver"),
-            color=alt.condition(
-                alt.datum.qualifies_for_basic,
-                alt.value(brand.TEAL),
-                alt.value("#94a3b8"),
-            ),
-            tooltip=[
-                alt.Tooltip("driver_id:N", title="Driver ID"),
-                alt.Tooltip("driver_name:N", title="Name"),
-                alt.Tooltip("total_parcels:Q", title="Parcels", format=","),
-                alt.Tooltip("net_payout:Q", title="Net", format=",.2f"),
-                alt.Tooltip("qualifies_for_basic:N", title="Basic eligible"),
-            ],
-        )
-        .properties(height=max(220, 28 * len(work)), title="Net payout by driver")
-    )
+    net = work.set_index("label")[["net_payout"]].rename(columns={"net_payout": "Net payout"})
+    frames["net_by_driver"] = net
 
-    charts["parcels_vs_avg"] = (
-        alt.Chart(work)
-        .mark_circle(size=120, opacity=0.85)
-        .encode(
-            x=alt.X("total_parcels:Q", title="Total parcels"),
-            y=alt.Y("avg_parcels_per_day:Q", title="Avg parcels / day"),
-            size=alt.Size("net_payout:Q", title="Net payout", legend=None),
-            color=alt.Color(
-                "qualifies_for_basic:N",
-                title="Basic eligible",
-                scale=alt.Scale(range=["#94a3b8", brand.TEAL]),
-            ),
-            tooltip=[
-                alt.Tooltip("driver_id:N", title="Driver ID"),
-                alt.Tooltip("total_parcels:Q", title="Parcels", format=","),
-                alt.Tooltip("avg_parcels_per_day:Q", title="Avg/day", format=".2f"),
-                alt.Tooltip("working_days:Q", title="Days"),
-                alt.Tooltip("net_payout:Q", title="Net", format=",.2f"),
-            ],
-        )
-        .properties(height=320, title="Volume vs daily average")
+    volume = work.set_index("label")[["total_parcels", "avg_parcels_per_day"]].rename(
+        columns={"total_parcels": "Parcels", "avg_parcels_per_day": "Avg / day"}
     )
+    frames["volume"] = volume
+
+    composition = work.set_index("label")[
+        ["commission_total", "basic_salary", "attendance_allowance"]
+    ].rename(
+        columns={
+            "commission_total": "Commission",
+            "basic_salary": "Basic",
+            "attendance_allowance": "Attendance",
+        }
+    )
+    frames["composition"] = composition
 
     band = fleet_weight_band_frame(results)
     if not band.empty:
-        band_agg = (
-            band.groupby("weight_band", as_index=False)
-            .agg(parcels=("parcels", "sum"), commission=("commission", "sum"))
-        )
-        charts["weight_mix"] = (
-            alt.Chart(band_agg)
-            .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
-            .encode(
-                x=alt.X("weight_band:N", title="Weight band", sort="-y"),
-                y=alt.Y("parcels:Q", title="Parcels"),
-                color=alt.value(brand.BLUE),
-                tooltip=[
-                    alt.Tooltip("weight_band:N", title="Band"),
-                    alt.Tooltip("parcels:Q", title="Parcels", format=","),
-                    alt.Tooltip("commission:Q", title="Commission", format=",.2f"),
-                ],
-            )
-            .properties(height=280, title="Fleet parcels by weight band")
+        frames["weight_mix"] = (
+            band.groupby("weight_band", as_index=True)[["parcels", "commission"]]
+            .sum()
+            .rename(columns={"parcels": "Parcels", "commission": "Commission"})
         )
 
-        payout_stack = work.melt(
-            id_vars=["driver_id", "label"],
-            value_vars=["commission_total", "basic_salary", "attendance_allowance"],
-            var_name="component",
-            value_name="amount",
-        )
-        payout_stack["component"] = payout_stack["component"].map(
-            {
-                "commission_total": "Commission",
-                "basic_salary": "Basic",
-                "attendance_allowance": "Attendance",
-            }
-        )
-        charts["payout_mix"] = (
-            alt.Chart(payout_stack)
-            .mark_bar()
-            .encode(
-                x=alt.X("amount:Q", title=f"Amount ({currency_symbol})", stack="zero"),
-                y=alt.Y("label:N", sort="-x", title="Driver"),
-                color=alt.Color(
-                    "component:N",
-                    title="Component",
-                    scale=alt.Scale(
-                        domain=["Commission", "Basic", "Attendance"],
-                        range=[brand.TEAL, brand.BLUE, brand.YELLOW],
-                    ),
-                ),
-                tooltip=[
-                    alt.Tooltip("label:N", title="Driver"),
-                    alt.Tooltip("component:N", title="Component"),
-                    alt.Tooltip("amount:Q", title="Amount", format=",.2f"),
-                ],
-            )
-            .properties(height=max(220, 28 * len(work)), title="Payout composition")
-        )
-
-    return charts
+    return frames
 
 
-def build_driver_charts(result: PayoutResult, currency_symbol: str = "RM") -> Dict[str, Any]:
-    alt = _altair()
-    charts: Dict[str, Any] = {}
+def driver_chart_frames(result: PayoutResult) -> Dict[str, pd.DataFrame]:
+    frames: Dict[str, pd.DataFrame] = {}
     daily = result.daily_summary
     if daily is not None and not daily.empty:
         work = daily.copy()
-        work["service_date"] = pd.to_datetime(work["service_date"])
-        base = alt.Chart(work).encode(x=alt.X("service_date:T", title="Date"))
-        parcels = base.mark_bar(color=brand.TEAL, cornerRadiusTopLeft=3, cornerRadiusTopRight=3).encode(
-            y=alt.Y("parcels:Q", title="Parcels"),
-            tooltip=[
-                alt.Tooltip("service_date:T", title="Date"),
-                alt.Tooltip("parcels:Q", title="Parcels"),
-                alt.Tooltip("commission:Q", title="Commission", format=",.2f"),
-            ],
-        )
-        commission = base.mark_line(color=brand.YELLOW, point=True).encode(
-            y=alt.Y("commission:Q", title=f"Commission ({currency_symbol})"),
-            tooltip=[
-                alt.Tooltip("service_date:T", title="Date"),
-                alt.Tooltip("commission:Q", title="Commission", format=",.2f"),
-            ],
-        )
-        charts["daily"] = (
-            alt.layer(parcels, commission)
-            .resolve_scale(y="independent")
-            .properties(height=320, title="Daily parcels & commission")
+        work["service_date"] = pd.to_datetime(work["service_date"]).dt.strftime("%Y-%m-%d")
+        frames["daily"] = work.set_index("service_date")[["parcels", "commission"]].rename(
+            columns={"parcels": "Parcels", "commission": "Commission"}
         )
 
     if result.parcels_by_band:
@@ -215,28 +91,15 @@ def build_driver_charts(result: PayoutResult, currency_symbol: str = "RM") -> Di
             [
                 {
                     "weight_band": band,
-                    "parcels": count,
-                    "commission": result.commission_by_band.get(band, 0.0),
+                    "Parcels": count,
+                    "Commission": result.commission_by_band.get(band, 0.0),
                 }
                 for band, count in result.parcels_by_band.items()
             ]
-        )
-        charts["bands"] = (
-            alt.Chart(band_df)
-            .mark_arc(innerRadius=55)
-            .encode(
-                theta=alt.Theta("parcels:Q"),
-                color=alt.Color("weight_band:N", title="Weight band"),
-                tooltip=[
-                    alt.Tooltip("weight_band:N", title="Band"),
-                    alt.Tooltip("parcels:Q", title="Parcels"),
-                    alt.Tooltip("commission:Q", title="Commission", format=",.2f"),
-                ],
-            )
-            .properties(height=300, title="Parcel mix by weight")
-        )
+        ).set_index("weight_band")
+        frames["bands"] = band_df
 
-    return charts
+    return frames
 
 
 def fleet_kpi_cards(results: List[PayoutResult]) -> Dict[str, float]:
