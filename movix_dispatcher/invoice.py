@@ -26,7 +26,7 @@ def build_invoice_html(
     """Build a printable HTML invoice for one courier payout result."""
     cfg = config or MovixConfig.load()
     symbol = cfg.currency_symbol
-    logo_uri = brand.logo_data_uri(mark=False)
+    logo_uri = brand.logo_data_uri(header=True)
     issued = (invoice_date or date.today()).isoformat()
     courier = clean_driver_name(result.driver_name) or "Courier"
     period = " — ".join(
@@ -96,8 +96,8 @@ def build_invoice_html(
       box-shadow: 0 10px 30px rgba(18, 48, 74, 0.08);
     }}
     .hero {{
-      padding: 24px 32px;
-      background: linear-gradient(135deg, {brand.NAVY} 0%, {brand.NAVY_DEEP} 72%, #0c3a57 100%);
+      padding: 22px 28px;
+      background: linear-gradient(135deg, {brand.PURPLE} 0%, {brand.PURPLE_MID} 55%, {brand.PURPLE_DEEP} 100%);
       color: white;
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -105,18 +105,17 @@ def build_invoice_html(
       align-items: center;
     }}
     .hero-logo {{
-      height: 52px;
+      height: 72px;
       width: auto;
-      background: white;
+      background: transparent;
       border-radius: 10px;
-      padding: 6px 10px;
     }}
-    .brand {{ font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }}
-    .sub {{ opacity: 0.92; margin-top: 6px; font-size: 14px; }}
+    .brand {{ font-size: 24px; font-weight: 750; letter-spacing: -0.03em; color: {brand.YELLOW}; }}
+    .sub {{ opacity: 0.95; margin-top: 6px; font-size: 14px; color: #FFFFFF; }}
     .badge {{
       align-self: start;
       background: {brand.YELLOW};
-      color: {brand.NAVY};
+      color: {brand.PURPLE};
       border-radius: 999px;
       padding: 8px 14px;
       font-size: 12px;
@@ -155,8 +154,8 @@ def build_invoice_html(
     }}
     th, td {{ padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }}
     th {{
-      background: {brand.BLUE};
-      color: white;
+      background: {brand.PURPLE};
+      color: {brand.YELLOW};
       text-align: left;
       font-size: 12px;
       text-transform: uppercase;

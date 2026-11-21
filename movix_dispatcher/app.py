@@ -68,7 +68,7 @@ def main() -> None:
         st.markdown(
             f"""
             <div class="movix-hero">
-              <img src="{brand.logo_data_uri()}" alt="Movix Logistics (M) Sdn. Bhd" />
+              <img src="{brand.logo_data_uri(header=True)}" alt="Movix Logistics (M) Sdn. Bhd" />
               <div class="copy">
                 <h1>OKAR Courier Payout</h1>
                 <p>Movix Logistics (M) Sdn. Bhd · OS Karangan (OKAR) · Sheet1 IC Payment export</p>

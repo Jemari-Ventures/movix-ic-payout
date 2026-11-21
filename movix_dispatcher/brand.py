@@ -1,4 +1,4 @@
-"""Movix Logistics brand tokens from the Movix Express recruitment poster."""
+"""Movix Logistics brand tokens from the official Movix Express logo."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ from pathlib import Path
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 
-# Sampled from Movix Express recruitment poster
-PURPLE = "#2C1760"
-PURPLE_DEEP = "#230E55"
-PURPLE_MID = "#41227E"
-PURPLE_LIGHT = "#553299"
-YELLOW = "#FED504"
+# Sampled from official Movix Express logo tile
+PURPLE = "#2E1B5A"
+PURPLE_DEEP = "#27145E"
+PURPLE_MID = "#3A2470"
+PURPLE_LIGHT = "#4A2F88"
+YELLOW = "#FFE000"
 YELLOW_SOFT = "#FFF6C2"
 SOFT_LAVENDER = "#F7F6FA"
 SOFT_PURPLE = "#EFEBF8"
@@ -40,10 +40,12 @@ LOGO_SVG = ASSETS_DIR / "movix-logo.svg"
 LOGO_MARK_SVG = ASSETS_DIR / "movix-logo-mark.svg"
 LOGO_PNG = ASSETS_DIR / "movix-logo.png"
 LOGO_MARK_PNG = ASSETS_DIR / "movix-logo-mark.png"
+LOGO_HEADER_PNG = ASSETS_DIR / "movix-logo-header.png"
+LOGO_OFFICIAL_PNG = ASSETS_DIR / "movix-logo-official.png"
 
 
 def streamlit_theme_css() -> str:
-    """Light theme: white app/sidebar, violet header band, yellow accents."""
+    """Light theme: white app/sidebar, violet header band with yellow wordmark."""
     return f"""
     <style>
       :root {{
@@ -100,17 +102,16 @@ def streamlit_theme_css() -> str:
         align-items: center;
         gap: 18px;
         margin: 0 0 14px 0;
-        padding: 18px 20px;
+        padding: 14px 18px;
         border-radius: 16px;
         background: linear-gradient(135deg, {PURPLE} 0%, {PURPLE_MID} 55%, {PURPLE_DEEP} 100%);
-        box-shadow: 0 10px 24px rgba(44, 23, 96, 0.18);
+        box-shadow: 0 10px 24px rgba(46, 27, 90, 0.22);
       }}
       .movix-hero img {{
-        height: 56px;
+        height: 64px;
         width: auto;
-        background: white;
         border-radius: 10px;
-        padding: 6px 10px;
+        background: transparent;
       }}
       .movix-hero .copy h1 {{
         margin: 0 !important;
@@ -137,11 +138,16 @@ def streamlit_theme_css() -> str:
     """
 
 
-def logo_data_uri(mark: bool = False, prefer_png: bool = True) -> str:
+def logo_data_uri(mark: bool = False, prefer_png: bool = True, header: bool = False) -> str:
     import base64
 
     if prefer_png:
-        path = LOGO_MARK_PNG if mark else LOGO_PNG
+        if header and LOGO_HEADER_PNG.exists():
+            path = LOGO_HEADER_PNG
+        elif mark:
+            path = LOGO_MARK_PNG
+        else:
+            path = LOGO_PNG if LOGO_PNG.exists() else LOGO_OFFICIAL_PNG
         if path.exists():
             encoded = base64.b64encode(path.read_bytes()).decode("ascii")
             return f"data:image/png;base64,{encoded}"
