@@ -97,7 +97,7 @@ def build_invoice_html(
     }}
     .hero {{
       padding: 22px 28px;
-      background: linear-gradient(135deg, {brand.PURPLE} 0%, {brand.PURPLE_MID} 55%, {brand.PURPLE_DEEP} 100%);
+      background: {brand.PURPLE};
       color: white;
       display: grid;
       grid-template-columns: auto 1fr auto;
@@ -108,7 +108,8 @@ def build_invoice_html(
       height: 72px;
       width: auto;
       background: transparent;
-      border-radius: 10px;
+      border-radius: 0;
+      display: block;
     }}
     .brand {{ font-size: 24px; font-weight: 750; letter-spacing: -0.03em; color: {brand.YELLOW}; }}
     .sub {{ opacity: 0.95; margin-top: 6px; font-size: 14px; color: #FFFFFF; }}

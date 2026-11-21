@@ -104,14 +104,15 @@ def streamlit_theme_css() -> str:
         margin: 0 0 14px 0;
         padding: 14px 18px;
         border-radius: 16px;
-        background: linear-gradient(135deg, {PURPLE} 0%, {PURPLE_MID} 55%, {PURPLE_DEEP} 100%);
+        background: {PURPLE};
         box-shadow: 0 10px 24px rgba(46, 27, 90, 0.22);
       }}
       .movix-hero img {{
         height: 64px;
         width: auto;
-        border-radius: 10px;
-        background: transparent;
+        border-radius: 0;
+        background: transparent !important;
+        box-shadow: none;
       }}
       .movix-hero .copy h1 {{
         margin: 0 !important;
