@@ -57,11 +57,12 @@
     "mc_days_disqualify_at": 2
   },
   "absent_penalty_per_day": 30.0,
+  "volume_gate_service_prefixes": ["Del - FWD D2D"],
   "notes": [
     "Courier Del - FWD D2D → OKAR weight tier (RM1 / RM1.80 / RM3).",
     "Courier PU - RR D2D / Del - RTS → RM0.70 flat (return).",
     "Courier Del - FWD BSC → RM0.10 flat (buyer self collect).",
     "Failed Deliveries → RM0 audit rows (visible, no pay).",
-    "Basic/attendance volume gate still counts all billable parcels (ops decision on hold)."
+    "Basic/attendance 50/day gate counts Del - FWD D2D only (BSC / returns / Failed do not inflate avg)."
   ]
 }

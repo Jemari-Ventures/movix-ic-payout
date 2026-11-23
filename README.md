@@ -25,7 +25,7 @@ Same purple/yellow Movix UI language; copy and KPIs tailored per role.
 | Attendance | RM200 same gate; MC −RM100/day; ≥2 MC → no allowance |
 | Absent | −RM30/day |
 
-Volume gate currently counts **all billable** parcels. Ops review of whether BSC/returns count is **on hold**.
+Volume gate counts **Del - FWD D2D only** (`volume_gate_service_prefixes` in config). BSC / returns / Failed do not inflate the ≥50/day average.
 
 ## SPX partner rate card (`config_management.json`)
 

@@ -24,6 +24,7 @@ def _payout(
         period_start=None,
         period_end=None,
         total_parcels=int(round(avg * max(working_days, 0))),
+        volume_parcels=int(round(avg * max(working_days, 0))),
         working_days=working_days,
         avg_parcels_per_day=avg,
         commission_total=commission,

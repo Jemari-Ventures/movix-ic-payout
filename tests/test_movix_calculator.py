@@ -129,7 +129,9 @@ def test_driver_commission_math():
     result = calc.calculate_driver(df, "1001")
     # A1 1.00 + A2 BSC 0.10 + A3 Failed 0 + A4 3.00 = 4.10
     assert result.total_parcels == 4
+    assert result.volume_parcels == 2  # D2D only (A1, A4); BSC/Failed excluded from gate
     assert result.working_days == 2
+    assert result.avg_parcels_per_day == 1.0  # 2 volume / 2 days
     assert result.commission_total == 4.10
     assert result.basic_salary == 0.0  # only 2 days
     assert result.net_payout == 4.10
@@ -138,6 +140,49 @@ def test_driver_commission_math():
     assert result.commission_by_service.get("Del - FWD BSC", 0) == 0.1
     assert result.parcels_by_service.get("Del - FWD D2D", 0) == 2
     assert result.parcels_by_service.get("Failed Deliveries", 0) == 1
+
+
+def test_volume_gate_ignores_bsc_and_returns():
+    """BSC/returns inflate total parcels but not the ≥50/day volume avg."""
+    cfg = MovixConfig.load()
+    rows = []
+    # 26 days × 40 D2D = 1040 volume → avg 40 (fail gate)
+    # Plus 26 × 20 BSC = 520 more billable → would look like avg 60 if all counted
+    for day in range(1, 27):
+        date = f"2026-10-{day:02d}" if day <= 31 else f"2026-11-{day - 31:02d}"
+        for i in range(40):
+            rows.append(
+                {
+                    "Service Date": date,
+                    "Service Type": "Del - FWD D2D",
+                    "LM Type": "D2D",
+                    "Shipment ID": f"D{day}-{i}",
+                    "Chargeable Weight": 1.0,
+                    "Driver ID": 1001,
+                    "Driver Name": "[1001] Test",
+                    "TIER": "T1",
+                }
+            )
+        for i in range(20):
+            rows.append(
+                {
+                    "Service Date": date,
+                    "Service Type": "Del - FWD BSC",
+                    "LM Type": "BSC",
+                    "Shipment ID": f"B{day}-{i}",
+                    "Chargeable Weight": 1.0,
+                    "Driver ID": 1001,
+                    "Driver Name": "[1001] Test",
+                    "TIER": "T1",
+                }
+            )
+    df = normalize_frame(pd.DataFrame(rows), cfg)
+    result = MovixPayoutCalculator(cfg).calculate_driver(df, "1001")
+    assert result.total_parcels == 26 * 60
+    assert result.volume_parcels == 26 * 40
+    assert result.avg_parcels_per_day == 40.0
+    assert result.qualifies_for_basic is False
+    assert result.basic_salary == 0.0
 
 
 def test_batch_summary():

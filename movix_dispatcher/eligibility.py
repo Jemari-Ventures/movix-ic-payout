@@ -64,14 +64,18 @@ def evaluate_eligibility(
     attendance_deduction = 0.0
     reasons = []
 
+    gate_scope = ", ".join(config.volume_gate_service_prefixes) or "all billable"
     if not qualifies_volume:
         reasons.append(
             f"Commission only: need ≥{config.basic_required_working_days} working days "
-            f"and avg ≥{config.basic_min_avg_parcels_per_day:.0f} parcels/day "
+            f"and avg ≥{config.basic_min_avg_parcels_per_day:.0f} "
+            f"volume parcels/day ({gate_scope}) "
             f"(got {working_days} days, avg {avg:.2f})."
         )
     else:
-        reasons.append("Meets basic salary gate (26 days + 50 parcels/day avg).")
+        reasons.append(
+            f"Meets basic salary gate (26 days + 50/day avg on {gate_scope})."
+        )
         # Attendance gate mirrors basic volume requirements from the poster.
         attendance_volume_ok = _meets_volume_gate(
             working_days,
