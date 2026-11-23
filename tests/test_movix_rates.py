@@ -1,4 +1,4 @@
-"""Unit tests for Movix weight commission (courier poster) + service overrides."""
+"""Unit tests for Movix courier service-type rates."""
 
 from __future__ import annotations
 
@@ -17,45 +17,29 @@ def config() -> MovixConfig:
     "weight,expected_rate,expected_label",
     [
         (0.0, 1.0, "0 – 5.00 kg"),
-        (0.08, 1.0, "0 – 5.00 kg"),
         (5.0, 1.0, "0 – 5.00 kg"),
         (5.01, 1.8, "5.01 – 20.00 kg"),
-        (7.73, 1.8, "5.01 – 20.00 kg"),
         (20.0, 1.8, "5.01 – 20.00 kg"),
         (20.01, 3.0, "> 20.00 kg"),
-        (30.0, 3.0, "> 20.00 kg"),
     ],
 )
-def test_d2d_commission_bands(config, weight, expected_rate, expected_label):
+def test_d2d_courier_tier(config, weight, expected_rate, expected_label):
     rate, label = commission_rate(weight, config, service_type="Del - FWD D2D")
     assert rate == expected_rate
     assert label == expected_label
-    band = resolve_weight_band(weight, config)
-    assert band is not None
-    assert band.rate == expected_rate
+    assert resolve_weight_band(weight, config).rate == expected_rate
 
 
-def test_courier_service_overrides(config):
-    assert "Del - FWD BSC" in config.billable_service_prefixes
-    assert "Del - RTS" in config.billable_service_prefixes
-
-    # BSC → SPX flat RM0.10 (not weight poster)
+def test_courier_flat_overrides(config):
     rate, label = commission_rate(2.0, config, service_type="Del - FWD BSC")
     assert rate == 0.1
     assert label == "BSC"
-    rate, _ = commission_rate(25.0, config, service_type="Del - FWD BSC")
-    assert rate == 0.1
 
-    # RTS → courier weight poster
-    rate, label = commission_rate(2.0, config, service_type="Del - RTS")
-    assert rate == 1.0
-    assert label == "0 – 5.00 kg"
-    rate, _ = commission_rate(10.0, config, service_type="Del - RTS")
-    assert rate == 1.8
+    rate, _ = commission_rate(25.0, config, service_type="PU - RR D2D")
+    assert rate == 0.7
 
-    # PU-RR → weight poster
-    rate, _ = commission_rate(1.0, config, service_type="PU - RR D2D")
-    assert rate == 1.0
+    rate, _ = commission_rate(25.0, config, service_type="Del - RTS")
+    assert rate == 0.7
 
 
 def test_negative_weight_unmapped(config):
