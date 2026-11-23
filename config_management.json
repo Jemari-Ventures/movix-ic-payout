@@ -6,25 +6,23 @@
     {
       "match": "Del - FWD D2D",
       "mode": "spx_door_to_door",
-      "label": "Door-to-door (SPX weight card)"
+      "label": "Door-to-door (SPX)"
     },
     {
       "match": "Del - FWD BSC",
       "mode": "flat",
       "rate": 0.1,
-      "label": "Buyer self collect"
+      "label": "BSC"
     },
     {
       "match": "Del - RTS",
-      "mode": "flat",
-      "rate": 0.0,
-      "label": "Return to seller (nil)"
+      "mode": "spx_door_to_door",
+      "label": "Return to seller (SPX)"
     },
     {
       "match": "PU - RR D2D",
-      "mode": "flat",
-      "rate": 0.7,
-      "label": "Pickup return"
+      "mode": "spx_door_to_door",
+      "label": "Pickup return (SPX)"
     }
   ],
   "lm_type_labels": {
@@ -105,11 +103,8 @@
     }
   ],
   "notes": [
-    "Management revenue rules (this file only):",
-    "Del - FWD D2D → SPX door-to-door weight card.",
-    "Del - FWD BSC → RM0.10 flat (buyer self collect).",
-    "Del - RTS → nil (RM0).",
-    "PU - RR D2D → RM0.70 flat (pickup return).",
-    "Courier cost: D2D/PU-RR/RTS use OKAR weight poster; BSC uses SPX RM0.10."
+    "Management Del - FWD D2D / PU - RR D2D / Del - RTS → SPX door-to-door weight column.",
+    "Management Del - FWD BSC → RM0.10 flat (buyer self collect).",
+    "Courier cost uses config_movix.json (D2D tier; BSC 0.10; PU-RR/RTS 0.70)."
   ]
 }

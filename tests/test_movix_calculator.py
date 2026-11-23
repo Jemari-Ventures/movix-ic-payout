@@ -79,7 +79,7 @@ def test_normalize_filters_failed_only():
     assert "A3" not in set(df["shipment_id"])
 
 
-def test_pickup_return_and_rts_use_weight_card():
+def test_pickup_return_and_rts_use_flat_rate():
     cfg = MovixConfig.load()
     raw = _sample_rows()
     raw = pd.concat(
@@ -115,8 +115,10 @@ def test_pickup_return_and_rts_use_weight_card():
     df = normalize_frame(raw, cfg)
     assert {"P1", "R1"} <= set(df["shipment_id"])
     result = MovixPayoutCalculator(cfg).calculate_driver(df, "1001")
-    # A1 1.00 + A2 BSC 0.10 + A4 3.00 + P1 1.00 + R1 1.00 = 6.10
-    assert result.commission_total == 6.10
+    # A1 1.00 + A2 BSC 0.10 + A4 3.00 + P1 0.70 + R1 0.70 = 5.50
+    assert result.commission_total == 5.50
+    assert result.commission_by_service.get("PU - RR D2D") == 0.7
+    assert result.commission_by_service.get("Del - RTS") == 0.7
 
 
 def test_driver_commission_math():

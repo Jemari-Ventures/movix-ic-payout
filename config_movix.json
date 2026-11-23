@@ -11,7 +11,7 @@
     {
       "match": "Del - FWD D2D",
       "mode": "weight_commission",
-      "label": "Door-to-door (weight card)"
+      "label": "Door-to-door (courier tier)"
     },
     {
       "match": "Del - FWD BSC",
@@ -21,13 +21,15 @@
     },
     {
       "match": "PU - RR D2D",
-      "mode": "weight_commission",
-      "label": "Pickup return (weight card)"
+      "mode": "flat",
+      "rate": 0.7,
+      "label": "Pickup return"
     },
     {
       "match": "Del - RTS",
-      "mode": "weight_commission",
-      "label": "Return to seller (weight card)"
+      "mode": "flat",
+      "rate": 0.7,
+      "label": "Return to seller"
     }
   ],
   "weight_commission": [
@@ -49,8 +51,10 @@
   },
   "absent_penalty_per_day": 30.0,
   "notes": [
-    "Courier Del - FWD D2D / PU - RR D2D / Del - RTS → OKAR weight poster (RM1 / RM1.80 / RM3).",
-    "Courier Del - FWD BSC → SPX rate RM0.10 flat.",
+    "Courier Del - FWD D2D → OKAR weight tier (RM1 / RM1.80 / RM3).",
+    "Courier PU - RR D2D → RM0.70 flat (return).",
+    "Courier Del - FWD BSC → RM0.10 flat (buyer self collect).",
+    "Courier Del - RTS → RM0.70 flat (return).",
     "Failed Deliveries remain excluded."
   ]
 }

@@ -114,9 +114,8 @@ def main() -> None:
         with st.expander("Service type mapping"):
             st.markdown(
                 "- **Del - FWD D2D** — SPX door-to-door weight card\n"
+                "- **PU - RR D2D / Del - RTS** — SPX door-to-door (returns)\n"
                 "- **Del - FWD BSC** — buyer self collect → **RM0.10** flat\n"
-                "- **Del - RTS** — return to seller → **nil (RM0)**\n"
-                "- **PU - RR D2D** — pickup return → **RM0.70** flat\n"
                 "- Failed Deliveries excluded"
             )
         for note in mgmt.notes:
