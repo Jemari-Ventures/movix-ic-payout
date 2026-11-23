@@ -96,40 +96,72 @@ def build_invoice_html(
       box-shadow: 0 10px 30px rgba(18, 48, 74, 0.08);
     }}
     .hero {{
-      padding: 22px 28px;
+      padding: 18px 20px 20px;
       background: {brand.PURPLE};
       color: white;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }}
+    .hero-top {{
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
     }}
     .hero-logo {{
-      height: 72px;
+      height: 56px;
       width: auto;
+      max-width: min(260px, 70%);
+      object-fit: contain;
+      object-position: left center;
       background: transparent;
       border-radius: 0;
       display: block;
+      flex: 0 1 auto;
     }}
-    .brand {{ font-size: 24px; font-weight: 750; letter-spacing: -0.03em; color: {brand.YELLOW}; }}
-    .sub {{ opacity: 0.95; margin-top: 6px; font-size: 14px; color: #FFFFFF; }}
+    .hero-copy {{
+      min-width: 0;
+      width: 100%;
+    }}
+    .brand {{
+      font-size: clamp(1rem, 4.2vw, 1.35rem);
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      color: {brand.YELLOW};
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }}
+    .sub {{
+      margin-top: 4px;
+      font-size: 13px;
+      color: #FFFFFF;
+      opacity: 0.95;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }}
     .badge {{
-      align-self: start;
+      flex: 0 0 auto;
       background: {brand.YELLOW};
       color: {brand.PURPLE};
       border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 12px;
+      padding: 8px 12px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
+      white-space: nowrap;
     }}
-    .body {{ padding: 28px 32px 36px; }}
+    .body {{ padding: 20px 16px 28px; }}
     .meta {{
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 22px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
     }}
     .meta .card {{
       border: 1px solid var(--line);
@@ -200,6 +232,15 @@ def build_invoice_html(
       color: var(--muted);
       font-size: 12px;
     }}
+    @media (max-width: 640px) {{
+      .sheet {{ margin: 8px auto; border-radius: 12px; }}
+      .hero {{ padding: 14px 14px 16px; gap: 10px; }}
+      .hero-logo {{ height: 44px; max-width: 65%; }}
+      .body {{ padding: 16px 12px 22px; }}
+      .meta .card {{ padding: 12px; }}
+      .row {{ font-size: 14px; }}
+      .row.total {{ font-size: 17px; }}
+    }}
     @media print {{
       body {{ background: white; }}
       .sheet {{ margin: 0; border: none; box-shadow: none; border-radius: 0; }}
@@ -209,12 +250,14 @@ def build_invoice_html(
 <body>
   <div class="sheet">
     <div class="hero">
-      <img class="hero-logo" src="{logo_uri}" alt="{escape(company_name)}" />
-      <div>
+      <div class="hero-top">
+        <img class="hero-logo" src="{logo_uri}" alt="{escape(company_name)}" />
+        <div class="badge">Invoice</div>
+      </div>
+      <div class="hero-copy">
         <div class="brand">{escape(company_name)}</div>
         <div class="sub">{escape(hub_name)} · Courier payout invoice</div>
       </div>
-      <div class="badge">Invoice</div>
     </div>
     <div class="body">
       <div class="meta">
