@@ -106,7 +106,7 @@ class ManagementConfig:
                     {
                         "Service": rule.match,
                         "Rule": rule.label,
-                        "Rate (RM)": rule.rate if rule.rate is not None else 0.0,
+                        "Rate (RM)": f"{0.0 if rule.rate is None else rule.rate:g}",
                     }
                 )
             elif rule.mode == "spx_door_to_door":
