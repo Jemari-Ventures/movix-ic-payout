@@ -83,14 +83,14 @@ def test_driver_commission_math():
     df = normalize_frame(_sample_rows(), cfg)
     calc = MovixPayoutCalculator(cfg)
     result = calc.calculate_driver(df, "1001")
-    # A1: 1.00 + A2: 1.80 + A4: 3.00 = 5.80
+    # A1 D2D 0.5kg: 1.00 + A2 BSC: 0.10 + A4 D2D 25kg: 3.00 = 4.10
     assert result.total_parcels == 3
     assert result.working_days == 2
-    assert result.commission_total == 5.80
+    assert result.commission_total == 4.10
     assert result.basic_salary == 0.0  # only 2 days
-    assert result.net_payout == 5.80
+    assert result.net_payout == 4.10
     assert result.parcels_by_band["0 – 5.00 kg"] == 1
-    assert result.parcels_by_band["5.01 – 20.00 kg"] == 1
+    assert result.parcels_by_band.get("Buyer self collect", 0) == 1
     assert result.parcels_by_band["> 20.00 kg"] == 1
 
 
@@ -120,8 +120,10 @@ def test_live_ic_payment_sheet1():
     df = load_sheet1(SAMPLE_XLSX, cfg)
     assert not df.empty
     assert {"service_date", "shipment_id", "chargeable_weight", "driver_id"} <= set(df.columns)
-    # Failed / RTS / PU rows excluded
-    assert df["service_type"].str.startswith("Del - FWD").all()
+    # Failed deliveries excluded; FWD / PU-RR / RTS included
+    assert not df["service_type"].str.startswith("Failed").any()
+    allowed = ("Del - FWD", "PU - RR", "Del - RTS")
+    assert df["service_type"].apply(lambda s: any(str(s).startswith(p) for p in allowed)).all()
 
     calc = MovixPayoutCalculator(cfg)
     results = calc.calculate_all(df)

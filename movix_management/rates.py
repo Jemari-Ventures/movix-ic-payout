@@ -1,4 +1,4 @@
-"""SPX partner weight → revenue rate mapping."""
+"""SPX / management revenue rates by service type + weight."""
 
 from __future__ import annotations
 
@@ -21,23 +21,44 @@ def resolve_band(weight_kg: float, config: ManagementConfig) -> Optional[SpxWeig
     return None
 
 
-def resolve_channel(lm_type: object, config: ManagementConfig) -> str:
-    key = str(lm_type or "").strip().upper()
-    return config.service_channel_map.get(key, config.default_channel)
-
-
 def rate_for_parcel(
     weight_kg: float,
-    lm_type: object,
+    service_type: object,
     config: ManagementConfig,
+    lm_type: object = None,
 ) -> Tuple[float, str, str]:
-    """Return (rate, weight_band_label, channel)."""
+    """Return (rate, band_or_rule_label, channel_key)."""
+    rule = config.find_service_rule(service_type)
+    if rule is None:
+        text = str(service_type or "")
+        if text.startswith("Del - FWD") and "BSC" in text.upper():
+            return 0.1, "Buyer self collect", "bsc_flat"
+        if text.startswith("Del - FWD"):
+            band = resolve_band(weight_kg, config)
+            if band is None:
+                return 0.0, "Unmapped", "door_to_door"
+            return float(band.door_to_door), band.label, "door_to_door"
+        return 0.0, "Unmapped service", "unmapped"
+
+    if rule.mode == "flat":
+        rate = 0.0 if rule.rate is None else float(rule.rate)
+        channel = "bsc_flat" if "BSC" in rule.match.upper() else (
+            "pickup_return" if "PU" in rule.match.upper() else "flat"
+        )
+        if "RTS" in rule.match.upper():
+            channel = "rts_nil"
+        return rate, rule.label or rule.match, channel
+
     band = resolve_band(weight_kg, config)
-    channel = resolve_channel(lm_type, config)
     if band is None:
-        return 0.0, "Unmapped", channel
-    rate = band.door_to_door if channel == "door_to_door" else band.drop_off
-    return float(rate), band.label, channel
+        return 0.0, "Unmapped weight", "door_to_door"
+
+    if rule.mode == "spx_door_to_door":
+        return float(band.door_to_door), band.label, "door_to_door"
+    if rule.mode == "spx_drop_off":
+        return float(band.drop_off), band.label, "drop_off"
+
+    return 0.0, f"Unknown mode:{rule.mode}", "unmapped"
 
 
 def apply_spx_rates(df: pd.DataFrame, config: ManagementConfig) -> pd.DataFrame:
@@ -50,9 +71,12 @@ def apply_spx_rates(df: pd.DataFrame, config: ManagementConfig) -> pd.DataFrame:
         return out
 
     rates, labels, channels = [], [], []
-    lm_series = df["lm_type"] if "lm_type" in df.columns else pd.Series([""] * len(df))
-    for weight, lm in zip(df["chargeable_weight"], lm_series):
-        rate, label, channel = rate_for_parcel(weight, lm, config)
+    service_col = df["service_type"] if "service_type" in df.columns else None
+    lm_col = df["lm_type"] if "lm_type" in df.columns else None
+    for idx, weight in enumerate(df["chargeable_weight"]):
+        st = service_col.iloc[idx] if service_col is not None else "Del - FWD D2D"
+        lm = lm_col.iloc[idx] if lm_col is not None else None
+        rate, label, channel = rate_for_parcel(weight, st, config, lm_type=lm)
         rates.append(rate)
         labels.append(label)
         channels.append(channel)

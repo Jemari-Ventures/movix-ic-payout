@@ -27,13 +27,22 @@ class SpxWeightBand:
 
 
 @dataclass(frozen=True)
+class ServiceTypeRate:
+    match: str
+    mode: str  # spx_door_to_door | spx_drop_off | flat
+    rate: Optional[float] = None
+    label: str = ""
+
+
+@dataclass(frozen=True)
 class ManagementConfig:
     currency_symbol: str = "RM"
     sheet_name: str = "Sheet1"
-    billable_service_prefixes: tuple = ("Del - FWD",)
-    service_channel_map: Dict[str, str] = field(default_factory=dict)
+    billable_service_prefixes: tuple = ("Del - FWD", "PU - RR", "Del - RTS")
+    service_type_rates: tuple = ()
     default_channel: str = "door_to_door"
     spx_weight_rates: tuple = ()
+    lm_type_labels: Dict[str, str] = field(default_factory=dict)
     notes: tuple = ()
     raw: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
 
@@ -49,18 +58,29 @@ class ManagementConfig:
             )
             for band in data.get("spx_weight_rates", [])
         )
+        service_rates = tuple(
+            ServiceTypeRate(
+                match=str(rule["match"]),
+                mode=str(rule.get("mode") or "flat"),
+                rate=None if rule.get("rate") is None else float(rule["rate"]),
+                label=str(rule.get("label") or rule["match"]),
+            )
+            for rule in data.get("service_type_rates", [])
+        )
         return cls(
             currency_symbol=str(data.get("currency_symbol", "RM")),
             sheet_name=str(data.get("sheet_name", "Sheet1")),
             billable_service_prefixes=tuple(
-                data.get("billable_service_prefixes") or ["Del - FWD"]
+                data.get("billable_service_prefixes")
+                or ["Del - FWD", "PU - RR", "Del - RTS"]
             ),
-            service_channel_map={
-                str(k).upper(): str(v)
-                for k, v in (data.get("service_channel_map") or {}).items()
-            },
+            service_type_rates=service_rates,
             default_channel=str(data.get("default_channel", "door_to_door")),
             spx_weight_rates=bands,
+            lm_type_labels={
+                str(k).upper(): str(v)
+                for k, v in (data.get("lm_type_labels") or {}).items()
+            },
             notes=tuple(data.get("notes") or []),
             raw=data,
         )
@@ -71,14 +91,46 @@ class ManagementConfig:
         with config_path.open(encoding="utf-8") as fh:
             return cls.from_dict(json.load(fh))
 
+    def find_service_rule(self, service_type: object) -> Optional[ServiceTypeRate]:
+        text = str(service_type or "").strip()
+        for rule in self.service_type_rates:
+            if text == rule.match or text.startswith(rule.match):
+                return rule
+        return None
+
     def rate_table_rows(self) -> List[Dict[str, Any]]:
-        rows = []
+        rows: List[Dict[str, Any]] = []
+        for rule in self.service_type_rates:
+            if rule.mode == "flat":
+                rows.append(
+                    {
+                        "Service": rule.match,
+                        "Rule": rule.label,
+                        "Rate (RM)": rule.rate if rule.rate is not None else 0.0,
+                    }
+                )
+            elif rule.mode == "spx_door_to_door":
+                rows.append(
+                    {
+                        "Service": rule.match,
+                        "Rule": rule.label,
+                        "Rate (RM)": "SPX door-to-door by weight",
+                    }
+                )
+            else:
+                rows.append(
+                    {
+                        "Service": rule.match,
+                        "Rule": rule.label,
+                        "Rate (RM)": rule.mode,
+                    }
+                )
         for band in self.spx_weight_rates:
             rows.append(
                 {
-                    "Weight band": band.label,
-                    "Door-to-door / Return pickup (RM)": band.door_to_door,
-                    "Drop-off / Return to SPX (RM)": band.drop_off,
+                    "Service": "SPX weight card",
+                    "Rule": band.label,
+                    "Rate (RM)": f"D2D {band.door_to_door} / drop-off {band.drop_off}",
                 }
             )
         return rows

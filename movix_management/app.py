@@ -103,19 +103,20 @@ def main() -> None:
     with st.sidebar:
         st.header("Data")
         uploaded = st.file_uploader("Upload IC Payment Excel (.xlsx)", type=["xlsx"])
-        st.markdown("**SPX partner rate card**")
-        st.caption("Door-to-door / return pickup · Drop-off / return to SPX")
+        st.markdown("**Service rates (management)**")
+        st.caption("SPX weight card for D2D · flat overrides for BSC / PU-RR / RTS")
         st.dataframe(
             pd.DataFrame(mgmt.rate_table_rows()),
             hide_index=True,
             use_container_width=True,
         )
-        with st.expander("Channel mapping"):
+        with st.expander("Service type mapping"):
             st.markdown(
-                "- **D2D** — door-to-door delivery → SPX door-to-door rate\n"
-                "- **BSC** — buyer self collect → SPX door-to-door rate "
-                "(not the drop-off / return-to-SPX column)\n"
-                "- Billable rows: `Del - FWD*` (same Sheet1 as courier app)"
+                "- **Del - FWD D2D** — SPX door-to-door weight card\n"
+                "- **Del - FWD BSC** — buyer self collect → **RM0.10** flat\n"
+                "- **Del - RTS** — return to seller → **nil (RM0)**\n"
+                "- **PU - RR D2D** — pickup return → **RM0.70** flat\n"
+                "- Failed Deliveries excluded"
             )
         for note in mgmt.notes:
             st.caption(f"• {note}")

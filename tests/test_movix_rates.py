@@ -1,4 +1,4 @@
-"""Unit tests for Movix weight commission bands."""
+"""Unit tests for Movix weight commission + service-type rates."""
 
 from __future__ import annotations
 
@@ -26,8 +26,8 @@ def config() -> MovixConfig:
         (30.0, 3.0, "> 20.00 kg"),
     ],
 )
-def test_commission_bands(config, weight, expected_rate, expected_label):
-    rate, label = commission_rate(weight, config)
+def test_d2d_commission_bands(config, weight, expected_rate, expected_label):
+    rate, label = commission_rate(weight, config, service_type="Del - FWD D2D")
     assert rate == expected_rate
     assert label == expected_label
     band = resolve_weight_band(weight, config)
@@ -35,7 +35,22 @@ def test_commission_bands(config, weight, expected_rate, expected_label):
     assert band.rate == expected_rate
 
 
+def test_service_type_overrides(config):
+    rate, label = commission_rate(2.0, config, service_type="Del - FWD BSC")
+    assert rate == 0.1
+    assert "self collect" in label.lower() or "BSC" in label or "Buyer" in label
+
+    rate, _ = commission_rate(20.0, config, service_type="Del - FWD BSC")
+    assert rate == 0.1
+
+    rate, _ = commission_rate(1.0, config, service_type="PU - RR D2D")
+    assert rate == 0.7
+
+    rate, _ = commission_rate(5.0, config, service_type="Del - RTS")
+    assert rate == 0.0
+
+
 def test_negative_weight_unmapped(config):
-    rate, label = commission_rate(-1.0, config)
+    rate, label = commission_rate(-1.0, config, service_type="Del - FWD D2D")
     assert rate == 0.0
     assert label == "Unmapped"
