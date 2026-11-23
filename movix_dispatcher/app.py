@@ -398,8 +398,21 @@ def main() -> None:
                     st.line_chart(driver_frames["daily"], color=[brand.PURPLE, brand.YELLOW], height=260)
                 if "daily_table" in driver_frames:
                     st.dataframe(as_arrow_safe(driver_frames["daily_table"]), hide_index=True, **width_kwargs())
+                if "service" in driver_frames:
+                    st.markdown("**Service type mix**")
+                    st.bar_chart(
+                        driver_frames["service"],
+                        color=[brand.PURPLE_LIGHT, brand.YELLOW],
+                        height=240,
+                    )
+                if "service_table" in driver_frames:
+                    st.dataframe(
+                        as_arrow_safe(driver_frames["service_table"]),
+                        hide_index=True,
+                        **width_kwargs(),
+                    )
                 if "bands" in driver_frames:
-                    st.markdown("**Weight band mix**")
+                    st.markdown("**Weight / rate-label mix**")
                     st.bar_chart(
                         driver_frames["bands"],
                         color=[brand.PURPLE_LIGHT, brand.YELLOW],
