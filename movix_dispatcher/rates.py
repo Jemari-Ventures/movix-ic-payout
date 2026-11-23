@@ -40,9 +40,9 @@ def commission_rate(
     """Resolve courier pay for a parcel (service-type rules + D2D weight card)."""
     rule = config.find_service_rule(service_type)
     if rule is None:
-        # Legacy fallback: treat unknown Del - FWD* as weight commission
-        text = str(service_type or "")
-        if text.startswith("Del - FWD"):
+        # Only explicit Del - FWD D2D falls back to weight card; BSC and others unpaid
+        text = str(service_type or "").strip()
+        if text.startswith("Del - FWD D2D"):
             return weight_commission_rate(weight_kg, config)
         return 0.0, "Unmapped service"
 

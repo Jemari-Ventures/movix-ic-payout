@@ -78,10 +78,10 @@ class FleetPayoutCalculator:
 
     @staticmethod
     def _courier_billable(df: pd.DataFrame) -> pd.DataFrame:
-        """Courier poster applies to Del - FWD only (not management PU-RR / RTS rows)."""
+        """Courier poster applies to Del - FWD D2D only (BSC / PU-RR / RTS excluded)."""
         if df.empty or "service_type" not in df.columns:
             return df
-        return df[df["service_type"].astype(str).str.startswith("Del - FWD")].copy()
+        return df[df["service_type"].astype(str).str.startswith("Del - FWD D2D")].copy()
 
     def calculate_driver(
         self,

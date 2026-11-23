@@ -71,10 +71,12 @@ def _sample_rows() -> pd.DataFrame:
     )
 
 
-def test_normalize_filters_failed_deliveries():
+def test_normalize_filters_failed_and_bsc():
     cfg = MovixConfig.load()
     df = normalize_frame(_sample_rows(), cfg)
-    assert set(df["shipment_id"]) == {"A1", "A2", "A4", "B1"}
+    # A2 BSC and A3 Failed excluded; D2D only
+    assert set(df["shipment_id"]) == {"A1", "A4", "B1"}
+    assert "A2" not in set(df["shipment_id"])
     assert "A3" not in set(df["shipment_id"])
 
 
@@ -83,14 +85,13 @@ def test_driver_commission_math():
     df = normalize_frame(_sample_rows(), cfg)
     calc = MovixPayoutCalculator(cfg)
     result = calc.calculate_driver(df, "1001")
-    # A1 D2D 0.5kg: 1.00 + A2 BSC 7kg: 1.80 + A4 D2D 25kg: 3.00 = 5.80
-    assert result.total_parcels == 3
+    # A1 D2D 0.5kg: 1.00 + A4 D2D 25kg: 3.00 = 4.00 (BSC excluded)
+    assert result.total_parcels == 2
     assert result.working_days == 2
-    assert result.commission_total == 5.80
+    assert result.commission_total == 4.00
     assert result.basic_salary == 0.0  # only 2 days
-    assert result.net_payout == 5.80
+    assert result.net_payout == 4.00
     assert result.parcels_by_band["0 – 5.00 kg"] == 1
-    assert result.parcels_by_band["5.01 – 20.00 kg"] == 1
     assert result.parcels_by_band["> 20.00 kg"] == 1
 
 
@@ -120,8 +121,8 @@ def test_live_ic_payment_sheet1():
     df = load_sheet1(SAMPLE_XLSX, cfg)
     assert not df.empty
     assert {"service_date", "shipment_id", "chargeable_weight", "driver_id"} <= set(df.columns)
-    # Courier: Del - FWD only (Failed / RTS / PU excluded)
-    assert df["service_type"].str.startswith("Del - FWD").all()
+    # Courier: Del - FWD D2D only (BSC / Failed / RTS / PU excluded)
+    assert df["service_type"].str.startswith("Del - FWD D2D").all()
 
     calc = MovixPayoutCalculator(cfg)
     results = calc.calculate_all(df)

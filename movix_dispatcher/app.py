@@ -94,14 +94,14 @@ def main() -> None:
         st.markdown("**Courier rate card** (OKAR poster)")
         st.dataframe(pd.DataFrame(config.rate_table_rows()), hide_index=True, use_container_width=True)
         st.markdown(
-            f"- **Del - FWD** (D2D & BSC) — weight card RM1 / RM1.80 / RM3\n"
+            f"- **Del - FWD D2D** only — weight card RM1 / RM1.80 / RM3\n"
+            f"- **BSC excluded** from courier pay (management revenue only)\n"
             f"- Basic: **{config.currency_symbol}{config.basic_amount:,.0f}** "
             f"(≥{config.basic_required_working_days} days & avg ≥{config.basic_min_avg_parcels_per_day:.0f}/day)\n"
             f"- Attendance: **{config.currency_symbol}{config.attendance_amount:,.0f}** "
             f"(MC −{config.currency_symbol}{config.mc_deduction_per_day:.0f}/day; "
             f"{config.mc_days_disqualify_at}+ MC → no allowance)\n"
-            f"- Absent: **{config.currency_symbol}{config.absent_penalty_per_day:.0f}/day**\n"
-            f"- Management-only rates (BSC RM0.10 / PU-RR RM0.70 / RTS nil) are **not** used here"
+            f"- Absent: **{config.currency_symbol}{config.absent_penalty_per_day:.0f}/day**"
         )
 
     if uploaded is None:
