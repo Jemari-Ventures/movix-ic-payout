@@ -110,6 +110,6 @@
     "Del - FWD BSC → RM0.10 flat (buyer self collect).",
     "Del - RTS → nil (RM0).",
     "PU - RR D2D → RM0.70 flat (pickup return).",
-    "Courier cost uses the OKAR weight poster for Del - FWD D2D only (BSC excluded from courier pay)."
+    "Courier cost: Del - FWD D2D + PU - RR D2D use OKAR weight poster; BSC excluded from courier pay."
   ]
 }

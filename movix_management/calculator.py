@@ -76,12 +76,15 @@ class FleetPayoutCalculator:
     def enrich(self, df: pd.DataFrame) -> pd.DataFrame:
         return apply_spx_rates(df, self.mgmt)
 
-    @staticmethod
-    def _courier_billable(df: pd.DataFrame) -> pd.DataFrame:
-        """Courier poster applies to Del - FWD D2D only (BSC / PU-RR / RTS excluded)."""
+    def _courier_billable(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Courier-paid rows only (Del - FWD D2D + PU - RR D2D; BSC/RTS excluded)."""
         if df.empty or "service_type" not in df.columns:
             return df
-        return df[df["service_type"].astype(str).str.startswith("Del - FWD D2D")].copy()
+        prefixes = tuple(self.courier_config.billable_service_prefixes)
+        mask = df["service_type"].astype(str).apply(
+            lambda s: any(s.startswith(p) for p in prefixes)
+        )
+        return df.loc[mask].copy()
 
     def calculate_driver(
         self,

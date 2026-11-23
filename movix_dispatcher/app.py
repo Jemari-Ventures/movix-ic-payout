@@ -95,8 +95,8 @@ def main() -> None:
         st.markdown("**Courier rate card** (OKAR poster)")
         st.dataframe(as_arrow_safe(pd.DataFrame(config.rate_table_rows())), hide_index=True, **width_kwargs())
         st.markdown(
-            f"- **Del - FWD D2D** only — weight card RM1 / RM1.80 / RM3\n"
-            f"- **BSC excluded** from courier pay (management revenue only)\n"
+            f"- **Del - FWD D2D** + **PU - RR D2D** — weight card RM1 / RM1.80 / RM3\n"
+            f"- **BSC / RTS excluded** from courier pay\n"
             f"- Basic: **{config.currency_symbol}{config.basic_amount:,.0f}** "
             f"(≥{config.basic_required_working_days} days & avg ≥{config.basic_min_avg_parcels_per_day:.0f}/day)\n"
             f"- Attendance: **{config.currency_symbol}{config.attendance_amount:,.0f}** "

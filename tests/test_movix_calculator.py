@@ -74,10 +74,42 @@ def _sample_rows() -> pd.DataFrame:
 def test_normalize_filters_failed_and_bsc():
     cfg = MovixConfig.load()
     df = normalize_frame(_sample_rows(), cfg)
-    # A2 BSC and A3 Failed excluded; D2D only
+    # A2 BSC and A3 Failed excluded; D2D kept
     assert set(df["shipment_id"]) == {"A1", "A4", "B1"}
     assert "A2" not in set(df["shipment_id"])
     assert "A3" not in set(df["shipment_id"])
+
+
+def test_pickup_return_included_at_flat_rate():
+    cfg = MovixConfig.load()
+    raw = _sample_rows()
+    raw = pd.concat(
+        [
+            raw,
+            pd.DataFrame(
+                [
+                    {
+                        "Service Date": "2026-10-21",
+                        "Service Type": "PU - RR D2D",
+                        "LM Type": "D2D",
+                        "Shipment ID": "P1",
+                        "Chargeable Weight": 2.0,
+                        "Driver ID": 1001,
+                        "Driver Name": "[1001] Test Driver",
+                        "TIER": "T1",
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    df = normalize_frame(raw, cfg)
+    assert "P1" in set(df["shipment_id"])
+    result = MovixPayoutCalculator(cfg).calculate_driver(df, "1001")
+    # A1 1.00 + A4 3.00 + P1 (2kg) 1.00 = 5.00 — PU-RR uses weight card
+    assert result.commission_total == 5.00
+    assert result.parcels_by_band["0 – 5.00 kg"] == 2
+    assert result.parcels_by_band["> 20.00 kg"] == 1
 
 
 def test_driver_commission_math():
@@ -121,8 +153,11 @@ def test_live_ic_payment_sheet1():
     df = load_sheet1(SAMPLE_XLSX, cfg)
     assert not df.empty
     assert {"service_date", "shipment_id", "chargeable_weight", "driver_id"} <= set(df.columns)
-    # Courier: Del - FWD D2D only (BSC / Failed / RTS / PU excluded)
-    assert df["service_type"].str.startswith("Del - FWD D2D").all()
+    # Courier: Del - FWD D2D and/or PU - RR D2D (BSC / Failed / RTS excluded)
+    assert df["service_type"].apply(
+        lambda s: str(s).startswith("Del - FWD D2D") or str(s).startswith("PU - RR D2D")
+    ).all()
+    assert not df["service_type"].str.contains("BSC").any()
 
     calc = MovixPayoutCalculator(cfg)
     results = calc.calculate_all(df)
