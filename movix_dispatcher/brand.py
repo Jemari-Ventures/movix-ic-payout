@@ -99,8 +99,9 @@ def streamlit_theme_css() -> str:
       }}
       .movix-hero {{
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 18px;
+        gap: 12px 16px;
         margin: 0 0 14px 0;
         padding: 14px 18px;
         border-radius: 16px;
@@ -108,24 +109,37 @@ def streamlit_theme_css() -> str:
         box-shadow: 0 10px 24px rgba(46, 27, 90, 0.22);
       }}
       .movix-hero img {{
-        height: 64px;
+        height: 56px;
         width: auto;
+        max-width: min(220px, 45vw);
+        flex: 0 0 auto;
         border-radius: 0;
         background: transparent !important;
         box-shadow: none;
       }}
+      .movix-hero .copy {{
+        flex: 1 1 180px;
+        min-width: 0;
+      }}
       .movix-hero .copy h1 {{
         margin: 0 !important;
-        font-size: 1.75rem !important;
+        font-size: clamp(1.15rem, 4vw, 1.75rem) !important;
+        line-height: 1.2 !important;
         color: {YELLOW} !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        word-break: normal;
       }}
       .movix-hero .copy p {{
         margin: 4px 0 0 0;
         color: #FFFFFF !important;
         opacity: 0.92;
+        font-size: 0.9rem;
+        white-space: normal !important;
       }}
       .movix-hero .badge {{
         margin-left: auto;
+        flex: 0 0 auto;
         background: {YELLOW};
         color: {PURPLE};
         font-weight: 800;
@@ -134,6 +148,34 @@ def streamlit_theme_css() -> str:
         text-transform: uppercase;
         border-radius: 999px;
         padding: 8px 12px;
+      }}
+      /* Mobile / tablet */
+      @media (max-width: 768px) {{
+        .movix-hero {{
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 12px 14px;
+        }}
+        .movix-hero img {{
+          height: 44px;
+          max-width: 70vw;
+        }}
+        .movix-hero .copy {{
+          width: 100%;
+          flex: 1 1 auto;
+        }}
+        .movix-hero .badge {{
+          margin-left: 0;
+        }}
+        [data-testid="stMainBlockContainer"] {{
+          padding-left: 1rem !important;
+          padding-right: 1rem !important;
+          max-width: 100% !important;
+        }}
+        div[data-testid="stMetricValue"] {{
+          font-size: 1.1rem !important;
+        }}
       }}
     </style>
     """

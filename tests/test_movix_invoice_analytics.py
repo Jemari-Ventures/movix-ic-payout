@@ -67,10 +67,16 @@ def test_analytics_frames_and_kpis():
     kpis = fleet_kpi_cards(results)
     assert kpis["drivers"] == 2
     assert kpis["parcels"] == 3
-    fleet = fleet_chart_frames(results)
+    fleet = fleet_chart_frames(results, short_labels=True)
     assert "net_by_driver" in fleet
     assert "volume" in fleet
     assert "composition" in fleet
+    assert "ranking" in fleet
+    assert list(fleet["net_by_driver"].index) == ["1001", "2002"] or set(fleet["net_by_driver"].index) == {
+        "1001",
+        "2002",
+    }
     driver_frames = driver_chart_frames(results[0])
     assert "daily" in driver_frames
     assert "bands" in driver_frames
+    assert "daily_table" in driver_frames

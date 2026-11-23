@@ -286,29 +286,48 @@ def main() -> None:
             st.info("Run **Calculate all drivers** in the Batch payout tab to unlock fleet analytics.")
         else:
             kpis = fleet_kpi_cards(batch_results)
-            k1, k2, k3, k4, k5 = st.columns(5)
-            k1.metric("Drivers", int(kpis["drivers"]))
-            k2.metric("Parcels", f"{int(kpis['parcels']):,}")
-            k3.metric("Commission", _money(kpis["commission"], config.currency_symbol))
-            k4.metric("Net payout", _money(kpis["net"], config.currency_symbol))
-            k5.metric("Basic qualified", f"{int(kpis['basic_qualified'])}/{int(kpis['drivers'])}")
+            # 2+2+1 stacks better on phones than 5 cramped columns
+            r1 = st.columns(2)
+            r1[0].metric("Drivers", int(kpis["drivers"]))
+            r1[1].metric("Parcels", f"{int(kpis['parcels']):,}")
+            r2 = st.columns(2)
+            r2[0].metric("Commission", _money(kpis["commission"], config.currency_symbol))
+            r2[1].metric("Net payout", _money(kpis["net"], config.currency_symbol))
+            st.metric(
+                "Basic qualified",
+                f"{int(kpis['basic_qualified'])}/{int(kpis['drivers'])}",
+            )
 
-            frames = fleet_chart_frames(batch_results)
+            frames = fleet_chart_frames(batch_results, short_labels=True)
+            if "ranking" in frames:
+                st.markdown("**Driver ranking** (readable on mobile)")
+                st.caption("Use this table as the source of truth; charts below use short Driver IDs.")
+                st.dataframe(frames["ranking"], hide_index=True, width="stretch")
+
             if "net_by_driver" in frames:
-                st.markdown("**Net payout by driver**")
-                st.bar_chart(frames["net_by_driver"], color=brand.PURPLE)
-            c_left, c_right = st.columns(2)
+                st.markdown("**Net payout by driver ID**")
+                st.bar_chart(frames["net_by_driver"], color=brand.PURPLE, height=280)
             if "volume" in frames:
-                c_left.markdown("**Parcels & daily average**")
-                c_left.bar_chart(frames["volume"], color=[brand.PURPLE, brand.PURPLE_MID])
+                st.markdown("**Parcels & daily average**")
+                st.bar_chart(frames["volume"], color=[brand.PURPLE, brand.PURPLE_MID], height=280)
             if "weight_mix" in frames:
-                c_right.markdown("**Fleet weight mix**")
-                c_right.bar_chart(frames["weight_mix"], color=[brand.PURPLE_LIGHT, brand.YELLOW])
+                st.markdown("**Fleet weight mix**")
+                st.bar_chart(
+                    frames["weight_mix"],
+                    color=[brand.PURPLE_LIGHT, brand.YELLOW],
+                    height=260,
+                )
+                st.dataframe(
+                    frames["weight_mix"].reset_index().rename(columns={"weight_band": "Weight band"}),
+                    hide_index=True,
+                    width="stretch",
+                )
             if "composition" in frames:
                 st.markdown("**Payout composition**")
                 st.bar_chart(
                     frames["composition"],
                     color=[brand.PURPLE, brand.PURPLE_MID, brand.YELLOW],
+                    height=280,
                 )
 
         st.markdown("---")
@@ -329,13 +348,20 @@ def main() -> None:
             if not driver_frames:
                 st.warning("No chart data for this driver.")
             else:
-                d1, d2 = st.columns(2)
                 if "daily" in driver_frames:
-                    d1.markdown("**Daily parcels & commission**")
-                    d1.line_chart(driver_frames["daily"], color=[brand.PURPLE, brand.YELLOW])
+                    st.markdown("**Daily parcels & commission**")
+                    st.line_chart(driver_frames["daily"], color=[brand.PURPLE, brand.YELLOW], height=260)
+                if "daily_table" in driver_frames:
+                    st.dataframe(driver_frames["daily_table"], hide_index=True, width="stretch")
                 if "bands" in driver_frames:
-                    d2.markdown("**Weight band mix**")
-                    d2.bar_chart(driver_frames["bands"], color=[brand.PURPLE_LIGHT, brand.YELLOW])
+                    st.markdown("**Weight band mix**")
+                    st.bar_chart(
+                        driver_frames["bands"],
+                        color=[brand.PURPLE_LIGHT, brand.YELLOW],
+                        height=240,
+                    )
+                if "bands_table" in driver_frames:
+                    st.dataframe(driver_frames["bands_table"], hide_index=True, width="stretch")
 
     with tab_invoice:
         st.subheader("Invoice")
