@@ -42,7 +42,7 @@ def test_courier_service_overrides(config):
     # BSC → SPX flat RM0.10 (not weight poster)
     rate, label = commission_rate(2.0, config, service_type="Del - FWD BSC")
     assert rate == 0.1
-    assert "SPX" in label or "self collect" in label.lower()
+    assert label == "BSC"
     rate, _ = commission_rate(25.0, config, service_type="Del - FWD BSC")
     assert rate == 0.1
 

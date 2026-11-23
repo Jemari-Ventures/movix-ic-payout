@@ -196,6 +196,28 @@ def main() -> None:
             for col, (label, value) in zip(cols, totals.items()):
                 col.metric(label, value)
 
+            batch_results: List[PayoutResult] = st.session_state.get("movix_batch_results") or []
+            if batch_results:
+                service_rows = []
+                for result in batch_results:
+                    for service, count in result.parcels_by_service.items():
+                        service_rows.append(
+                            {
+                                "Service type": service,
+                                "Parcels": count,
+                                "Commission": result.commission_by_service.get(service, 0.0),
+                            }
+                        )
+                if service_rows:
+                    service_df = (
+                        pd.DataFrame(service_rows)
+                        .groupby("Service type", as_index=False)
+                        .agg(Parcels=("Parcels", "sum"), Commission=("Commission", "sum"))
+                        .sort_values("Commission", ascending=False)
+                    )
+                    st.markdown("**Fleet breakdown by service type**")
+                    st.dataframe(as_arrow_safe(service_df), hide_index=True, **width_kwargs())
+
             csv_buf = io.StringIO()
             summary.to_csv(csv_buf, index=False)
             st.download_button(
@@ -234,6 +256,11 @@ def main() -> None:
 
             st.info(result.eligibility_reason)
 
+            service_df = result.service_breakdown_frame()
+            if not service_df.empty:
+                st.markdown("**Commission by service type**")
+                st.dataframe(as_arrow_safe(service_df), hide_index=True, **width_kwargs())
+
             if result.parcels_by_band:
                 band_df = pd.DataFrame(
                     [
@@ -245,7 +272,7 @@ def main() -> None:
                         for band in result.parcels_by_band
                     ]
                 )
-                st.markdown("**Commission by weight band**")
+                st.markdown("**Commission by weight / rate label**")
                 st.dataframe(as_arrow_safe(band_df), hide_index=True, **width_kwargs())
 
             if not result.daily_summary.empty:
@@ -312,8 +339,24 @@ def main() -> None:
             if "volume" in frames:
                 st.markdown("**Parcels & daily average**")
                 st.bar_chart(frames["volume"], color=[brand.PURPLE, brand.PURPLE_MID], height=280)
+            if "service_mix" in frames:
+                st.markdown("**Fleet mix by service type**")
+                st.bar_chart(
+                    frames["service_mix"],
+                    color=[brand.PURPLE_LIGHT, brand.YELLOW],
+                    height=260,
+                )
+                st.dataframe(
+                    as_arrow_safe(
+                        frames["service_mix"]
+                        .reset_index()
+                        .rename(columns={"service_type": "Service type"})
+                    ),
+                    hide_index=True,
+                    **width_kwargs(),
+                )
             if "weight_mix" in frames:
-                st.markdown("**Fleet weight mix**")
+                st.markdown("**Fleet weight / rate-label mix**")
                 st.bar_chart(
                     frames["weight_mix"],
                     color=[brand.PURPLE_LIGHT, brand.YELLOW],

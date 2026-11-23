@@ -109,6 +109,24 @@ def fleet_chart_frames(results: List[PayoutResult], short_labels: bool = True) -
             .rename(columns={"parcels": "Parcels", "commission": "Commission"})
         )
 
+    service_rows = []
+    for result in results:
+        for service, count in result.parcels_by_service.items():
+            service_rows.append(
+                {
+                    "service_type": service,
+                    "parcels": count,
+                    "commission": result.commission_by_service.get(service, 0.0),
+                }
+            )
+    if service_rows:
+        frames["service_mix"] = (
+            pd.DataFrame(service_rows)
+            .groupby("service_type", as_index=True)[["parcels", "commission"]]
+            .sum()
+            .rename(columns={"parcels": "Parcels", "commission": "Commission"})
+        )
+
     return frames
 
 
@@ -127,6 +145,11 @@ def driver_chart_frames(result: PayoutResult) -> Dict[str, pd.DataFrame]:
         frames["daily_table"] = detail.rename(
             columns={"service_date": "Date", "parcels": "Parcels", "commission": "Commission"}
         )
+
+    if result.parcels_by_service:
+        service_df = result.service_breakdown_frame()
+        frames["service"] = service_df.set_index("Service type")
+        frames["service_table"] = service_df
 
     if result.parcels_by_band:
         band_df = pd.DataFrame(

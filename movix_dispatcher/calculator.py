@@ -34,6 +34,8 @@ class PayoutResult:
     eligibility_reason: str
     parcels_by_band: Dict[str, int] = field(default_factory=dict)
     commission_by_band: Dict[str, float] = field(default_factory=dict)
+    parcels_by_service: Dict[str, int] = field(default_factory=dict)
+    commission_by_service: Dict[str, float] = field(default_factory=dict)
     daily_summary: pd.DataFrame = field(default_factory=pd.DataFrame, repr=False)
     parcel_detail: pd.DataFrame = field(default_factory=pd.DataFrame, repr=False)
 
@@ -43,12 +45,30 @@ class PayoutResult:
         row.pop("parcel_detail", None)
         row.pop("parcels_by_band", None)
         row.pop("commission_by_band", None)
-        # Flatten band counts for CSV export
+        row.pop("parcels_by_service", None)
+        row.pop("commission_by_service", None)
+        # Flatten band / service counts for CSV export
         for band, count in self.parcels_by_band.items():
             row[f"parcels::{band}"] = count
         for band, amount in self.commission_by_band.items():
             row[f"commission::{band}"] = amount
+        for service, count in self.parcels_by_service.items():
+            row[f"service_parcels::{service}"] = count
+        for service, amount in self.commission_by_service.items():
+            row[f"service_commission::{service}"] = amount
         return row
+
+    def service_breakdown_frame(self) -> pd.DataFrame:
+        rows = []
+        for service in sorted(self.parcels_by_service.keys()):
+            rows.append(
+                {
+                    "Service type": service,
+                    "Parcels": self.parcels_by_service.get(service, 0),
+                    "Commission": self.commission_by_service.get(service, 0.0),
+                }
+            )
+        return pd.DataFrame(rows)
 
 
 class MovixPayoutCalculator:
@@ -143,6 +163,13 @@ class MovixPayoutCalculator:
         band_amounts = (
             priced.groupby("weight_band")["commission_amount"].sum().round(2).to_dict()
         )
+        if "service_type" in priced.columns:
+            service_counts = priced.groupby("service_type").size().to_dict()
+            service_amounts = (
+                priced.groupby("service_type")["commission_amount"].sum().round(2).to_dict()
+            )
+        else:
+            service_counts, service_amounts = {}, {}
 
         daily = (
             priced.groupby("service_date", as_index=False)
@@ -184,6 +211,8 @@ class MovixPayoutCalculator:
             eligibility_reason=eligibility.reason,
             parcels_by_band={str(k): int(v) for k, v in band_counts.items()},
             commission_by_band={str(k): float(v) for k, v in band_amounts.items()},
+            parcels_by_service={str(k): int(v) for k, v in service_counts.items()},
+            commission_by_service={str(k): float(v) for k, v in service_amounts.items()},
             daily_summary=daily,
             parcel_detail=priced,
         )

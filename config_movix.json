@@ -17,7 +17,7 @@
       "match": "Del - FWD BSC",
       "mode": "flat",
       "rate": 0.1,
-      "label": "Buyer self collect (SPX rate)"
+      "label": "BSC"
     },
     {
       "match": "PU - RR D2D",

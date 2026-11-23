@@ -132,7 +132,10 @@ def test_driver_commission_math():
     assert result.net_payout == 4.10
     assert result.parcels_by_band["0 – 5.00 kg"] == 1
     assert result.parcels_by_band["> 20.00 kg"] == 1
-    assert result.parcels_by_band.get("Buyer self collect (SPX rate)", 0) == 1
+    assert result.parcels_by_band.get("BSC", 0) == 1
+    assert result.parcels_by_service.get("Del - FWD BSC", 0) == 1
+    assert result.commission_by_service.get("Del - FWD BSC", 0) == 0.1
+    assert result.parcels_by_service.get("Del - FWD D2D", 0) == 2
 
 
 def test_batch_summary():
