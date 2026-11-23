@@ -36,8 +36,8 @@ def _sample_rows() -> pd.DataFrame:
             },
             {
                 "Service Date": "2026-10-21",
-                "Service Type": "Del - FWD BSC",
-                "LM Type": "BSC",
+                "Service Type": "Del - FWD D2D",
+                "LM Type": "D2D",
                 "Shipment ID": "B1",
                 "Chargeable Weight": 1.0,
                 "Driver ID": 2002,
