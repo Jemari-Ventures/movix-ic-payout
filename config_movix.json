@@ -1,17 +1,12 @@
 {
   "currency_symbol": "RM",
   "sheet_name": "Sheet1",
-  "billable_service_prefixes": ["Del - FWD"],
+  "billable_service_prefixes": ["Del - FWD D2D"],
   "service_type_rates": [
     {
       "match": "Del - FWD D2D",
       "mode": "weight_commission",
       "label": "Door-to-door (weight card)"
-    },
-    {
-      "match": "Del - FWD BSC",
-      "mode": "weight_commission",
-      "label": "Buyer self collect (weight card)"
     }
   ],
   "weight_commission": [
@@ -33,8 +28,8 @@
   },
   "absent_penalty_per_day": 30.0,
   "notes": [
-    "Courier pay uses the OKAR weight commission poster for all Del - FWD (D2D and BSC).",
-    "BSC RM0.10 / PU-RR RM0.70 / RTS nil are management (SPX) rates only — see config_management.json.",
+    "Courier pay uses the OKAR weight commission poster for Del - FWD D2D only.",
+    "Del - FWD BSC is excluded from courier payout (management still books BSC at RM0.10).",
     "Failed Deliveries, Del - RTS, and PU - RR are excluded from courier payout."
   ]
 }
