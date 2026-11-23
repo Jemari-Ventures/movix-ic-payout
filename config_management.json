@@ -4,9 +4,13 @@
   "billable_service_prefixes": ["Del - FWD"],
   "service_channel_map": {
     "D2D": "door_to_door",
-    "BSC": "drop_off"
+    "BSC": "door_to_door"
   },
   "default_channel": "door_to_door",
+  "lm_type_labels": {
+    "D2D": "Door-to-door",
+    "BSC": "Buyer self collect (BSC)"
+  },
   "spx_weight_rates": [
     {
       "min_kg": 0.0,
@@ -82,7 +86,8 @@
   "notes": [
     "Rates are indicative and may differ across service areas.",
     "Rates include taxes but exclude performance incentives.",
-    "D2D LM type uses door-to-door rates; BSC uses drop-off rates.",
+    "D2D = door-to-door delivery; BSC = buyer self collect — both Del - FWD use the door-to-door SPX column.",
+    "The SPX drop-off / return-to-SPX column is for seller drop-off and returns (not BSC).",
     "Courier cost uses the OKAR IC rate card for margin comparison."
   ]
 }

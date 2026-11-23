@@ -47,17 +47,32 @@ def fleet_chart_frames(results: List[DriverFleetResult]) -> Dict[str, pd.DataFra
         .reset_index(drop=True)
     )
 
+    # Prefer LM-type mix (D2D vs BSC) when parcel detail is present
+    d2d_n = bsc_n = 0
+    d2d_rev = bsc_rev = 0.0
+    for r in results:
+        if r.parcel_detail.empty or "lm_type" not in r.parcel_detail.columns:
+            d2d_n += r.door_to_door_parcels
+            d2d_rev += r.door_to_door_revenue
+            continue
+        d2d_mask = r.parcel_detail["lm_type"] == "D2D"
+        bsc_mask = r.parcel_detail["lm_type"] == "BSC"
+        d2d_n += int(d2d_mask.sum())
+        bsc_n += int(bsc_mask.sum())
+        d2d_rev += float(r.parcel_detail.loc[d2d_mask, "spx_revenue"].sum())
+        bsc_rev += float(r.parcel_detail.loc[bsc_mask, "spx_revenue"].sum())
+
     channel_mix = pd.DataFrame(
         [
             {
-                "channel": "Door-to-door",
-                "parcels": sum(r.door_to_door_parcels for r in results),
-                "revenue": sum(r.door_to_door_revenue for r in results),
+                "channel": "Door-to-door (D2D)",
+                "parcels": d2d_n,
+                "revenue": round(d2d_rev, 2),
             },
             {
-                "channel": "Drop-off",
-                "parcels": sum(r.drop_off_parcels for r in results),
-                "revenue": sum(r.drop_off_revenue for r in results),
+                "channel": "Buyer self collect (BSC)",
+                "parcels": bsc_n,
+                "revenue": round(bsc_rev, 2),
             },
         ]
     )
@@ -104,13 +119,23 @@ def driver_chart_frames(result: Optional[DriverFleetResult]) -> Dict[str, pd.Dat
         .agg(parcels=("shipment_id", "count"), revenue=("spx_revenue", "sum"))
         .sort_values("revenue", ascending=False)
     )
-    channel_mix = (
-        detail.groupby("channel", as_index=False)
-        .agg(parcels=("shipment_id", "count"), revenue=("spx_revenue", "sum"))
-    )
-    channel_mix["channel"] = channel_mix["channel"].map(
-        {"door_to_door": "Door-to-door", "drop_off": "Drop-off"}
-    ).fillna(channel_mix["channel"])
+    if "lm_type" in detail.columns:
+        channel_mix = (
+            detail.groupby("lm_type", as_index=False)
+            .agg(parcels=("shipment_id", "count"), revenue=("spx_revenue", "sum"))
+        )
+        channel_mix["channel"] = channel_mix["lm_type"].map(
+            {"D2D": "Door-to-door (D2D)", "BSC": "Buyer self collect (BSC)"}
+        ).fillna(channel_mix["lm_type"])
+        channel_mix = channel_mix[["channel", "parcels", "revenue"]]
+    else:
+        channel_mix = (
+            detail.groupby("channel", as_index=False)
+            .agg(parcels=("shipment_id", "count"), revenue=("spx_revenue", "sum"))
+        )
+        channel_mix["channel"] = channel_mix["channel"].map(
+            {"door_to_door": "Door-to-door", "drop_off": "Drop-off / return to SPX"}
+        ).fillna(channel_mix["channel"])
 
     daily = pd.DataFrame()
     if "service_date" in detail.columns:

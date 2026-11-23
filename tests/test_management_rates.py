@@ -18,15 +18,16 @@ def test_spx_bands_match_config():
     assert rate == 1.1
     assert "3kg" in label or label.startswith("<")
 
+    # BSC = buyer self collect → still door-to-door SPX column (not drop-off/return-to-SPX)
     rate, _, channel = rate_for_parcel(2.5, "BSC", cfg)
-    assert channel == "drop_off"
-    assert rate == 0.1
+    assert channel == "door_to_door"
+    assert rate == 1.1
 
     rate, _, _ = rate_for_parcel(15.0, "D2D", cfg)
     assert rate == 3.1
 
     rate, _, _ = rate_for_parcel(55.0, "BSC", cfg)
-    assert rate == 3.0
+    assert rate == 6.45
 
 
 def test_fleet_margin_positive_on_light_d2d():

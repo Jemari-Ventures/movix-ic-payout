@@ -108,12 +108,13 @@ def main() -> None:
         st.dataframe(
             pd.DataFrame(mgmt.rate_table_rows()),
             hide_index=True,
-            width="stretch",
+            use_container_width=True,
         )
         with st.expander("Channel mapping"):
             st.markdown(
-                "- **D2D** → door-to-door rate\n"
-                "- **BSC** → drop-off rate\n"
+                "- **D2D** — door-to-door delivery → SPX door-to-door rate\n"
+                "- **BSC** — buyer self collect → SPX door-to-door rate "
+                "(not the drop-off / return-to-SPX column)\n"
                 "- Billable rows: `Del - FWD*` (same Sheet1 as courier app)"
             )
         for note in mgmt.notes:
@@ -166,14 +167,43 @@ def main() -> None:
             _render_kpis(fleet_kpi_cards(summary, symbol))
             c1, c2 = st.columns(2)
             with c1:
-                st.markdown("**Channel mix**")
+                st.markdown("**Delivery mix (LM type)**")
+                # Recompute LM mix from last results for clearer D2D vs BSC labels
+                results_for_mix = st.session_state.get("mgmt_results") or []
+                d2d_n = sum(
+                    int((r.parcel_detail.get("lm_type") == "D2D").sum())
+                    if not r.parcel_detail.empty and "lm_type" in r.parcel_detail
+                    else r.door_to_door_parcels
+                    for r in results_for_mix
+                )
+                bsc_n = sum(
+                    int((r.parcel_detail.get("lm_type") == "BSC").sum())
+                    if not r.parcel_detail.empty and "lm_type" in r.parcel_detail
+                    else 0
+                    for r in results_for_mix
+                )
+                d2d_rev = 0.0
+                bsc_rev = 0.0
+                for r in results_for_mix:
+                    if r.parcel_detail.empty or "lm_type" not in r.parcel_detail:
+                        continue
+                    d2d_rev += float(
+                        r.parcel_detail.loc[
+                            r.parcel_detail["lm_type"] == "D2D", "spx_revenue"
+                        ].sum()
+                    )
+                    bsc_rev += float(
+                        r.parcel_detail.loc[
+                            r.parcel_detail["lm_type"] == "BSC", "spx_revenue"
+                        ].sum()
+                    )
                 st.write(
-                    f"Door-to-door: **{summary.door_to_door_parcels:,}** parcels · "
-                    f"{_money(summary.door_to_door_revenue, symbol)}"
+                    f"Door-to-door (D2D): **{d2d_n:,}** parcels · "
+                    f"{_money(round(d2d_rev, 2), symbol)}"
                 )
                 st.write(
-                    f"Drop-off: **{summary.drop_off_parcels:,}** parcels · "
-                    f"{_money(summary.drop_off_revenue, symbol)}"
+                    f"Buyer self collect (BSC): **{bsc_n:,}** parcels · "
+                    f"{_money(round(bsc_rev, 2), symbol)}"
                 )
             with c2:
                 st.markdown("**Takeaway**")
@@ -206,7 +236,7 @@ def main() -> None:
             ]
             show = summary_df[[c for c in display_cols if c in summary_df.columns]].copy()
             show = show.sort_values("margin", ascending=False)
-            st.dataframe(show, hide_index=True, width="stretch")
+            st.dataframe(show, hide_index=True, use_container_width=True)
             buf = io.BytesIO()
             show.to_csv(buf, index=False)
             st.download_button(
@@ -251,27 +281,37 @@ def main() -> None:
 
             m1, m2, m3 = st.columns(3)
             m1.metric("Parcels", f"{result.total_parcels:,}")
-            m2.metric("Door-to-door", f"{result.door_to_door_parcels:,}")
-            m3.metric("Drop-off", f"{result.drop_off_parcels:,}")
+            if not result.parcel_detail.empty and "lm_type" in result.parcel_detail:
+                m2.metric(
+                    "D2D",
+                    f"{int((result.parcel_detail['lm_type'] == 'D2D').sum()):,}",
+                )
+                m3.metric(
+                    "BSC (buyer self collect)",
+                    f"{int((result.parcel_detail['lm_type'] == 'BSC').sum()):,}",
+                )
+            else:
+                m2.metric("Door-to-door rate", f"{result.door_to_door_parcels:,}")
+                m3.metric("Drop-off rate", f"{result.drop_off_parcels:,}")
 
             charts = driver_chart_frames(result)
             if not charts["weight_band"].empty:
                 st.markdown("**Revenue by weight band**")
                 st.bar_chart(
                     charts["weight_band"].set_index("weight_band")["revenue"],
-                    width="stretch",
+                    use_container_width=True,
                 )
             if not charts["channel_mix"].empty:
                 st.markdown("**Channel mix**")
                 st.bar_chart(
                     charts["channel_mix"].set_index("channel")["revenue"],
-                    width="stretch",
+                    use_container_width=True,
                 )
             if not charts["daily"].empty:
                 st.markdown("**Daily SPX revenue**")
                 daily = charts["daily"].copy()
                 daily["service_date"] = pd.to_datetime(daily["service_date"]).dt.date.astype(str)
-                st.line_chart(daily.set_index("service_date")["revenue"], width="stretch")
+                st.line_chart(daily.set_index("service_date")["revenue"], use_container_width=True)
 
             st.markdown("**Parcel detail**")
             detail_cols = [
@@ -292,7 +332,7 @@ def main() -> None:
             st.dataframe(
                 result.parcel_detail[detail_cols],
                 hide_index=True,
-                width="stretch",
+                use_container_width=True,
             )
 
     with tab_analytics:
@@ -307,21 +347,21 @@ def main() -> None:
                 chart_df = frames["margin_by_driver"].set_index("driver")[
                     ["spx_revenue", "courier_cost", "margin"]
                 ]
-                st.bar_chart(chart_df, width="stretch")
+                st.bar_chart(chart_df, use_container_width=True)
             c1, c2 = st.columns(2)
             with c1:
                 if not frames["channel_mix"].empty:
                     st.markdown("**Channel revenue**")
                     st.bar_chart(
                         frames["channel_mix"].set_index("channel")["revenue"],
-                        width="stretch",
+                        use_container_width=True,
                     )
             with c2:
                 if not frames["weight_band"].empty:
                     st.markdown("**Parcels by weight band**")
                     st.bar_chart(
                         frames["weight_band"].set_index("weight_band")["parcels"],
-                        width="stretch",
+                        use_container_width=True,
                     )
 
     with tab_rates:
@@ -329,13 +369,13 @@ def main() -> None:
         st.dataframe(
             pd.DataFrame(mgmt.rate_table_rows()),
             hide_index=True,
-            width="stretch",
+            use_container_width=True,
         )
         st.subheader("OKAR courier rates (cost side)")
         st.dataframe(
             pd.DataFrame(courier_cfg.rate_table_rows()),
             hide_index=True,
-            width="stretch",
+            use_container_width=True,
         )
         st.caption(
             f"Basic {symbol}{courier_cfg.basic_amount:,.0f} · "
