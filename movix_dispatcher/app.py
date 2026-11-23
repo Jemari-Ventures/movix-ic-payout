@@ -17,6 +17,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from movix_dispatcher import brand
+from movix_dispatcher.streamlit_compat import as_arrow_safe, width_kwargs
 from movix_dispatcher.analytics import (
     driver_chart_frames,
     fleet_chart_frames,
@@ -92,7 +93,7 @@ def main() -> None:
         st.header("Data")
         uploaded = st.file_uploader("Upload IC Payment Excel (.xlsx)", type=["xlsx"])
         st.markdown("**Courier rate card** (OKAR poster)")
-        st.dataframe(pd.DataFrame(config.rate_table_rows()), hide_index=True, use_container_width=True)
+        st.dataframe(as_arrow_safe(pd.DataFrame(config.rate_table_rows())), hide_index=True, **width_kwargs())
         st.markdown(
             f"- **Del - FWD D2D** only — weight card RM1 / RM1.80 / RM3\n"
             f"- **BSC excluded** from courier pay (management revenue only)\n"
@@ -142,7 +143,7 @@ def main() -> None:
         edited = st.data_editor(
             adj_seed,
             hide_index=True,
-            use_container_width=True,
+            **width_kwargs(),
             disabled=["driver_id", "driver_name"],
             column_config={
                 "mc_days": st.column_config.NumberColumn("MC days", min_value=0, step=1),
@@ -181,7 +182,7 @@ def main() -> None:
                 "eligibility_reason",
             ]
             present = [c for c in display_cols if c in summary.columns]
-            st.dataframe(summary[present], hide_index=True, use_container_width=True)
+            st.dataframe(as_arrow_safe(summary[present]), hide_index=True, **width_kwargs())
 
             totals = {
                 "Parcels": int(summary["total_parcels"].sum()),
@@ -245,11 +246,11 @@ def main() -> None:
                     ]
                 )
                 st.markdown("**Commission by weight band**")
-                st.dataframe(band_df, hide_index=True, use_container_width=True)
+                st.dataframe(as_arrow_safe(band_df), hide_index=True, **width_kwargs())
 
             if not result.daily_summary.empty:
                 st.markdown("**Daily summary**")
-                st.dataframe(result.daily_summary, hide_index=True, use_container_width=True)
+                st.dataframe(as_arrow_safe(result.daily_summary), hide_index=True, **width_kwargs())
 
             if not result.parcel_detail.empty:
                 export_cols = [
@@ -303,7 +304,7 @@ def main() -> None:
             if "ranking" in frames:
                 st.markdown("**Driver ranking** (readable on mobile)")
                 st.caption("Use this table as the source of truth; charts below use short Driver IDs.")
-                st.dataframe(frames["ranking"], hide_index=True, use_container_width=True)
+                st.dataframe(as_arrow_safe(frames["ranking"]), hide_index=True, **width_kwargs())
 
             if "net_by_driver" in frames:
                 st.markdown("**Net payout by driver ID**")
@@ -321,7 +322,7 @@ def main() -> None:
                 st.dataframe(
                     frames["weight_mix"].reset_index().rename(columns={"weight_band": "Weight band"}),
                     hide_index=True,
-                    use_container_width=True,
+                    **width_kwargs(),
                 )
             if "composition" in frames:
                 st.markdown("**Payout composition**")
@@ -353,7 +354,7 @@ def main() -> None:
                     st.markdown("**Daily parcels & commission**")
                     st.line_chart(driver_frames["daily"], color=[brand.PURPLE, brand.YELLOW], height=260)
                 if "daily_table" in driver_frames:
-                    st.dataframe(driver_frames["daily_table"], hide_index=True, use_container_width=True)
+                    st.dataframe(as_arrow_safe(driver_frames["daily_table"]), hide_index=True, **width_kwargs())
                 if "bands" in driver_frames:
                     st.markdown("**Weight band mix**")
                     st.bar_chart(
@@ -362,7 +363,7 @@ def main() -> None:
                         height=240,
                     )
                 if "bands_table" in driver_frames:
-                    st.dataframe(driver_frames["bands_table"], hide_index=True, use_container_width=True)
+                    st.dataframe(as_arrow_safe(driver_frames["bands_table"]), hide_index=True, **width_kwargs())
 
     with tab_invoice:
         st.subheader("Invoice")

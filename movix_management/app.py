@@ -15,6 +15,7 @@ import pandas as pd
 import streamlit as st
 
 from movix_dispatcher import brand
+from movix_dispatcher.streamlit_compat import as_arrow_safe, chart_width_kwargs, width_kwargs
 from movix_dispatcher.calculator import MovixPayoutCalculator
 from movix_dispatcher.config import MovixConfig
 from movix_dispatcher.ingest import date_bounds, driver_directory, load_sheet1
@@ -106,9 +107,9 @@ def main() -> None:
         st.markdown("**Service rates (management)**")
         st.caption("SPX weight card for D2D · flat overrides for BSC / PU-RR / RTS")
         st.dataframe(
-            pd.DataFrame(mgmt.rate_table_rows()),
+            as_arrow_safe(pd.DataFrame(mgmt.rate_table_rows())),
             hide_index=True,
-            use_container_width=True,
+            **width_kwargs(),
         )
         with st.expander("Service type mapping"):
             st.markdown(
@@ -237,7 +238,7 @@ def main() -> None:
             ]
             show = summary_df[[c for c in display_cols if c in summary_df.columns]].copy()
             show = show.sort_values("margin", ascending=False)
-            st.dataframe(show, hide_index=True, use_container_width=True)
+            st.dataframe(as_arrow_safe(show), hide_index=True, **width_kwargs())
             buf = io.BytesIO()
             show.to_csv(buf, index=False)
             st.download_button(
@@ -300,19 +301,19 @@ def main() -> None:
                 st.markdown("**Revenue by weight band**")
                 st.bar_chart(
                     charts["weight_band"].set_index("weight_band")["revenue"],
-                    use_container_width=True,
+                    **width_kwargs(),
                 )
             if not charts["channel_mix"].empty:
                 st.markdown("**Channel mix**")
                 st.bar_chart(
                     charts["channel_mix"].set_index("channel")["revenue"],
-                    use_container_width=True,
+                    **width_kwargs(),
                 )
             if not charts["daily"].empty:
                 st.markdown("**Daily SPX revenue**")
                 daily = charts["daily"].copy()
                 daily["service_date"] = pd.to_datetime(daily["service_date"]).dt.date.astype(str)
-                st.line_chart(daily.set_index("service_date")["revenue"], use_container_width=True)
+                st.line_chart(daily.set_index("service_date")["revenue"], **chart_width_kwargs())
 
             st.markdown("**Parcel detail**")
             detail_cols = [
@@ -333,7 +334,7 @@ def main() -> None:
             st.dataframe(
                 result.parcel_detail[detail_cols],
                 hide_index=True,
-                use_container_width=True,
+                **width_kwargs(),
             )
 
     with tab_analytics:
@@ -348,35 +349,35 @@ def main() -> None:
                 chart_df = frames["margin_by_driver"].set_index("driver")[
                     ["spx_revenue", "courier_cost", "margin"]
                 ]
-                st.bar_chart(chart_df, use_container_width=True)
+                st.bar_chart(chart_df, **chart_width_kwargs())
             c1, c2 = st.columns(2)
             with c1:
                 if not frames["channel_mix"].empty:
                     st.markdown("**Channel revenue**")
                     st.bar_chart(
                         frames["channel_mix"].set_index("channel")["revenue"],
-                        use_container_width=True,
+                        **width_kwargs(),
                     )
             with c2:
                 if not frames["weight_band"].empty:
                     st.markdown("**Parcels by weight band**")
                     st.bar_chart(
                         frames["weight_band"].set_index("weight_band")["parcels"],
-                        use_container_width=True,
+                        **width_kwargs(),
                     )
 
     with tab_rates:
         st.subheader("SPX partner rates (management)")
         st.dataframe(
-            pd.DataFrame(mgmt.rate_table_rows()),
+            as_arrow_safe(pd.DataFrame(mgmt.rate_table_rows())),
             hide_index=True,
-            use_container_width=True,
+            **width_kwargs(),
         )
         st.subheader("OKAR courier rates (cost side)")
         st.dataframe(
-            pd.DataFrame(courier_cfg.rate_table_rows()),
+            as_arrow_safe(pd.DataFrame(courier_cfg.rate_table_rows())),
             hide_index=True,
-            use_container_width=True,
+            **width_kwargs(),
         )
         st.caption(
             f"Basic {symbol}{courier_cfg.basic_amount:,.0f} · "
