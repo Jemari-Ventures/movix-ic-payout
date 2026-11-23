@@ -20,6 +20,46 @@ def fleet_kpi_cards(summary: FleetSummary, symbol: str = "RM") -> List[Dict[str,
     ]
 
 
+def service_pnl_frame(
+    results: List[DriverFleetResult],
+    courier_priced: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """Revenue (SPX) by service type; optional courier cost join by service_type."""
+    rows = []
+    for r in results:
+        if r.parcel_detail.empty or "service_type" not in r.parcel_detail.columns:
+            continue
+        for service, grp in r.parcel_detail.groupby("service_type"):
+            rows.append(
+                {
+                    "Service type": service,
+                    "Parcels": int(len(grp)),
+                    "SPX revenue": round(float(grp["spx_revenue"].sum()), 2),
+                }
+            )
+    if not rows:
+        return pd.DataFrame(
+            columns=["Service type", "Parcels", "SPX revenue", "Courier cost", "Margin"]
+        )
+    rev = (
+        pd.DataFrame(rows)
+        .groupby("Service type", as_index=False)
+        .agg(Parcels=("Parcels", "sum"), **{"SPX revenue": ("SPX revenue", "sum")})
+    )
+    if courier_priced is not None and not courier_priced.empty and "service_type" in courier_priced:
+        cost = (
+            courier_priced.groupby("service_type", as_index=False)["commission_amount"]
+            .sum()
+            .rename(columns={"service_type": "Service type", "commission_amount": "Courier cost"})
+        )
+        rev = rev.merge(cost, on="Service type", how="left")
+    else:
+        rev["Courier cost"] = 0.0
+    rev["Courier cost"] = rev["Courier cost"].fillna(0.0).round(2)
+    rev["Margin"] = (rev["SPX revenue"] - rev["Courier cost"]).round(2)
+    return rev.sort_values("Margin", ascending=False)
+
+
 def fleet_chart_frames(results: List[DriverFleetResult]) -> Dict[str, pd.DataFrame]:
     if not results:
         empty = pd.DataFrame()

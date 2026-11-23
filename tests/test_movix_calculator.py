@@ -71,12 +71,13 @@ def _sample_rows() -> pd.DataFrame:
     )
 
 
-def test_normalize_filters_failed_only():
+def test_normalize_includes_failed_as_nil():
     cfg = MovixConfig.load()
     df = normalize_frame(_sample_rows(), cfg)
-    # Failed excluded; BSC + D2D kept
-    assert set(df["shipment_id"]) == {"A1", "A2", "A4", "B1"}
-    assert "A3" not in set(df["shipment_id"])
+    # Failed kept as RM0 audit; BSC + D2D kept
+    assert set(df["shipment_id"]) == {"A1", "A2", "A3", "A4", "B1"}
+    result = MovixPayoutCalculator(cfg).calculate_driver(df, "1001")
+    assert result.commission_by_service.get("Failed Deliveries", 0.0) == 0.0
 
 
 def test_pickup_return_and_rts_use_flat_rate():
@@ -126,18 +127,17 @@ def test_driver_commission_math():
     df = normalize_frame(_sample_rows(), cfg)
     calc = MovixPayoutCalculator(cfg)
     result = calc.calculate_driver(df, "1001")
-    # A1 D2D 0.5kg: 1.00 + A2 BSC: 0.10 + A4 D2D 25kg: 3.00 = 4.10
-    assert result.total_parcels == 3
+    # A1 1.00 + A2 BSC 0.10 + A3 Failed 0 + A4 3.00 = 4.10
+    assert result.total_parcels == 4
     assert result.working_days == 2
     assert result.commission_total == 4.10
     assert result.basic_salary == 0.0  # only 2 days
     assert result.net_payout == 4.10
-    assert result.parcels_by_band["0 – 5.00 kg"] == 1
-    assert result.parcels_by_band["> 20.00 kg"] == 1
     assert result.parcels_by_band.get("BSC", 0) == 1
     assert result.parcels_by_service.get("Del - FWD BSC", 0) == 1
     assert result.commission_by_service.get("Del - FWD BSC", 0) == 0.1
     assert result.parcels_by_service.get("Del - FWD D2D", 0) == 2
+    assert result.parcels_by_service.get("Failed Deliveries", 0) == 1
 
 
 def test_batch_summary():
@@ -166,9 +166,13 @@ def test_live_ic_payment_sheet1():
     df = load_sheet1(SAMPLE_XLSX, cfg)
     assert not df.empty
     assert {"service_date", "shipment_id", "chargeable_weight", "driver_id"} <= set(df.columns)
-    # Failed excluded; FWD / PU-RR / RTS allowed
-    assert not df["service_type"].str.startswith("Failed").any()
-    allowed = ("Del - FWD D2D", "Del - FWD BSC", "PU - RR D2D", "Del - RTS")
+    allowed = (
+        "Del - FWD D2D",
+        "Del - FWD BSC",
+        "PU - RR D2D",
+        "Del - RTS",
+        "Failed Deliveries",
+    )
     assert df["service_type"].apply(
         lambda s: any(str(s).startswith(p) for p in allowed)
     ).all()

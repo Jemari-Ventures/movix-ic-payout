@@ -77,7 +77,7 @@ class FleetPayoutCalculator:
         return apply_spx_rates(df, self.mgmt)
 
     def _courier_billable(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Courier-paid rows only (Del - FWD D2D + PU - RR D2D; BSC/RTS excluded)."""
+        """Courier-paid rows matching config_movix billable prefixes."""
         if df.empty or "service_type" not in df.columns:
             return df
         prefixes = tuple(self.courier_config.billable_service_prefixes)

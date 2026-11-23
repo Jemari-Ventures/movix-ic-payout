@@ -1,7 +1,7 @@
 {
   "currency_symbol": "RM",
   "sheet_name": "Sheet1",
-  "billable_service_prefixes": ["Del - FWD", "PU - RR", "Del - RTS"],
+  "billable_service_prefixes": ["Del - FWD", "PU - RR", "Del - RTS", "Failed Deliveries"],
   "service_type_rates": [
     {
       "match": "Del - FWD D2D",
@@ -23,6 +23,12 @@
       "match": "PU - RR D2D",
       "mode": "spx_door_to_door",
       "label": "Pickup return (SPX)"
+    },
+    {
+      "match": "Failed Deliveries",
+      "mode": "flat",
+      "rate": 0.0,
+      "label": "Failed (audit nil)"
     }
   ],
   "lm_type_labels": {
@@ -31,80 +37,22 @@
   },
   "default_channel": "door_to_door",
   "spx_weight_rates": [
-    {
-      "min_kg": 0.0,
-      "max_kg": 2.999,
-      "label": "< 3kg",
-      "door_to_door": 1.1,
-      "drop_off": 0.1
-    },
-    {
-      "min_kg": 3.0,
-      "max_kg": 5.0,
-      "label": "3kg – 5kg",
-      "door_to_door": 1.4,
-      "drop_off": 0.1
-    },
-    {
-      "min_kg": 5.001,
-      "max_kg": 10.0,
-      "label": "5kg – 10kg",
-      "door_to_door": 1.9,
-      "drop_off": 0.1
-    },
-    {
-      "min_kg": 10.001,
-      "max_kg": 20.0,
-      "label": "10kg – 20kg",
-      "door_to_door": 3.1,
-      "drop_off": 1.0
-    },
-    {
-      "min_kg": 20.001,
-      "max_kg": 30.0,
-      "label": "20kg – 30kg",
-      "door_to_door": 4.0,
-      "drop_off": 1.0
-    },
-    {
-      "min_kg": 30.001,
-      "max_kg": 40.0,
-      "label": "30kg – 40kg",
-      "door_to_door": 4.4,
-      "drop_off": 2.0
-    },
-    {
-      "min_kg": 40.001,
-      "max_kg": 50.0,
-      "label": "40kg – 50kg",
-      "door_to_door": 5.0,
-      "drop_off": 2.0
-    },
-    {
-      "min_kg": 50.001,
-      "max_kg": 60.0,
-      "label": "50kg – 60kg",
-      "door_to_door": 6.45,
-      "drop_off": 2.5
-    },
-    {
-      "min_kg": 60.001,
-      "max_kg": 70.0,
-      "label": "60kg – 70kg",
-      "door_to_door": 6.45,
-      "drop_off": 2.5
-    },
-    {
-      "min_kg": 70.001,
-      "max_kg": null,
-      "label": "> 70kg",
-      "door_to_door": 6.45,
-      "drop_off": 3.0
-    }
+    {"min_kg": 0.0, "max_kg": 2.999, "label": "< 3kg", "door_to_door": 1.1, "drop_off": 0.1},
+    {"min_kg": 3.0, "max_kg": 5.0, "label": "3kg – 5kg", "door_to_door": 1.4, "drop_off": 0.1},
+    {"min_kg": 5.0, "max_kg": 10.0, "label": "5kg – 10kg", "door_to_door": 1.9, "drop_off": 0.1},
+    {"min_kg": 10.0, "max_kg": 20.0, "label": "10kg – 20kg", "door_to_door": 3.1, "drop_off": 1.0},
+    {"min_kg": 20.0, "max_kg": 30.0, "label": "20kg – 30kg", "door_to_door": 4.0, "drop_off": 1.0},
+    {"min_kg": 30.0, "max_kg": 40.0, "label": "30kg – 40kg", "door_to_door": 4.4, "drop_off": 2.0},
+    {"min_kg": 40.0, "max_kg": 50.0, "label": "40kg – 50kg", "door_to_door": 5.0, "drop_off": 2.0},
+    {"min_kg": 50.0, "max_kg": 60.0, "label": "50kg – 60kg", "door_to_door": 6.45, "drop_off": 2.5},
+    {"min_kg": 60.0, "max_kg": 70.0, "label": "60kg – 70kg", "door_to_door": 6.45, "drop_off": 2.5},
+    {"min_kg": 70.0, "max_kg": null, "label": "> 70kg", "door_to_door": 6.45, "drop_off": 3.0}
   ],
   "notes": [
     "Management Del - FWD D2D / PU - RR D2D / Del - RTS → SPX door-to-door weight column.",
     "Management Del - FWD BSC → RM0.10 flat (buyer self collect).",
-    "Courier cost uses config_movix.json (D2D tier; BSC 0.10; PU-RR/RTS 0.70)."
+    "Failed Deliveries → RM0 audit rows (visible, no revenue).",
+    "SPX bands are contiguous (first match wins at shared edges).",
+    "Courier cost uses config_movix.json."
   ]
 }

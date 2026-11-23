@@ -19,8 +19,15 @@ from movix_dispatcher.streamlit_compat import as_arrow_safe, chart_width_kwargs,
 from movix_dispatcher.calculator import MovixPayoutCalculator
 from movix_dispatcher.config import MovixConfig
 from movix_dispatcher.ingest import date_bounds, driver_directory, load_sheet1
+from movix_dispatcher.projections import project_full_month_if_short
+from movix_dispatcher.rates import apply_commission_rates
 
-from movix_management.analytics import driver_chart_frames, fleet_chart_frames, fleet_kpi_cards
+from movix_management.analytics import (
+    driver_chart_frames,
+    fleet_chart_frames,
+    fleet_kpi_cards,
+    service_pnl_frame,
+)
 from movix_management.calculator import (
     DriverFleetResult,
     FleetPayoutCalculator,
@@ -116,7 +123,7 @@ def main() -> None:
                 "- **Del - FWD D2D** — SPX door-to-door weight card\n"
                 "- **PU - RR D2D / Del - RTS** — SPX door-to-door (returns)\n"
                 "- **Del - FWD BSC** — buyer self collect → **RM0.10** flat\n"
-                "- Failed Deliveries excluded"
+                "- **Failed Deliveries** — RM0 audit (visible, no revenue)"
             )
         for note in mgmt.notes:
             st.caption(f"• {note}")
@@ -135,7 +142,7 @@ def main() -> None:
         return
 
     if df.empty:
-        st.warning("No billable `Del - FWD` parcels found in this file.")
+        st.warning("No billable parcels found in this file.")
         return
 
     start, end = date_bounds(df)
@@ -220,6 +227,33 @@ def main() -> None:
                         f"{_money(abs(summary.margin), symbol)}. "
                         "Review mix of D2D vs BSC and heavy parcels."
                     )
+
+            # Service-type P&L + return callout
+            courier_slice = fleet_calc._courier_billable(df)
+            courier_priced = apply_commission_rates(courier_slice, courier_cfg)
+            pnl = service_pnl_frame(results or [], courier_priced)
+            if not pnl.empty:
+                st.markdown("**P&L by service type**")
+                st.dataframe(as_arrow_safe(pnl), hide_index=True, **width_kwargs())
+                returns = pnl[
+                    pnl["Service type"].astype(str).str.contains("PU - RR|Del - RTS", regex=True)
+                ]
+                if not returns.empty and float(returns["Margin"].sum()) < 0:
+                    st.warning(
+                        "Returns (PU-RR / RTS) are **margin-negative** under current rates "
+                        f"({_money(float(returns['Margin'].sum()), symbol)}). "
+                        "Expected when courier flat RM0.70 exceeds SPX return revenue on light parcels."
+                    )
+
+            # Full-month projection from courier payout side
+            payouts = courier_calc.calculate_all(courier_slice)
+            proj = project_full_month_if_short(payouts, courier_cfg)
+            if proj is not None:
+                st.warning(
+                    proj.message
+                    + f" Projected fleet margin if that lands: roughly "
+                    f"{_money(summary.margin - proj.projected_extra_total, symbol)}."
+                )
 
         if results:
             summary_df = results_to_summary_frame(results)

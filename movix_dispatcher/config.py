@@ -42,6 +42,7 @@ class MovixConfig:
         "Del - FWD BSC",
         "PU - RR D2D",
         "Del - RTS",
+        "Failed Deliveries",
     )
     service_type_rates: tuple = ()
     weight_commission: tuple = ()
@@ -81,7 +82,13 @@ class MovixConfig:
         attendance = data.get("attendance_allowance", {}) or {}
         prefixes = tuple(
             data.get("billable_service_prefixes")
-            or ["Del - FWD D2D", "Del - FWD BSC", "PU - RR D2D", "Del - RTS"]
+            or [
+                "Del - FWD D2D",
+                "Del - FWD BSC",
+                "PU - RR D2D",
+                "Del - RTS",
+                "Failed Deliveries",
+            ]
         )
         return cls(
             currency_symbol=str(data.get("currency_symbol", "RM")),
