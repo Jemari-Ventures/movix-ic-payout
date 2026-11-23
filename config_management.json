@@ -105,11 +105,11 @@
     }
   ],
   "notes": [
-    "SPX door-to-door / return-pickup-from-buyer column used for Del - FWD D2D.",
-    "Del - FWD BSC = RM0.10 flat (buyer self collect) — not the SPX drop-off weight column.",
-    "Del - RTS = nil (RM0).",
-    "PU - RR D2D = RM0.70 flat (pickup return).",
-    "SPX drop-off column kept for reference; rates match the official weight card.",
-    "Courier cost uses the OKAR IC / service-type rules in config_movix.json."
+    "Management revenue rules (this file only):",
+    "Del - FWD D2D → SPX door-to-door weight card.",
+    "Del - FWD BSC → RM0.10 flat (buyer self collect).",
+    "Del - RTS → nil (RM0).",
+    "PU - RR D2D → RM0.70 flat (pickup return).",
+    "Courier cost still uses the OKAR weight poster for Del - FWD only (config_movix.json)."
   ]
 }

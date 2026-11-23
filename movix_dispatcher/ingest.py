@@ -12,21 +12,23 @@ from .names import clean_driver_name
 from .schema import missing_required, rename_to_canonical, resolve_columns
 
 Source = Union[str, Path, BinaryIO]
+# Duck-typed: needs sheet_name + billable_service_prefixes (MovixConfig or ManagementConfig)
+ConfigLike = object
 
 
 def load_sheet1(
     source: Source,
-    config: Optional[MovixConfig] = None,
+    config: Optional[ConfigLike] = None,
     sheet_name: Optional[str] = None,
 ) -> pd.DataFrame:
     """Read Sheet1 (or configured sheet) from an Excel workbook."""
     cfg = config or MovixConfig.load()
-    name = sheet_name or cfg.sheet_name
+    name = sheet_name or getattr(cfg, "sheet_name", "Sheet1")
     df = pd.read_excel(source, sheet_name=name, engine="openpyxl")
     return normalize_frame(df, cfg)
 
 
-def normalize_frame(df: pd.DataFrame, config: Optional[MovixConfig] = None) -> pd.DataFrame:
+def normalize_frame(df: pd.DataFrame, config: Optional[ConfigLike] = None) -> pd.DataFrame:
     """Validate headers, canonicalize columns, coerce types, filter billable rows."""
     cfg = config or MovixConfig.load()
     if df is None or df.empty:
@@ -78,11 +80,11 @@ def normalize_frame(df: pd.DataFrame, config: Optional[MovixConfig] = None) -> p
     return out
 
 
-def filter_billable(df: pd.DataFrame, config: MovixConfig) -> pd.DataFrame:
-    """Keep configured service types (Del - FWD*, PU - RR*, Del - RTS by default)."""
+def filter_billable(df: pd.DataFrame, config: ConfigLike) -> pd.DataFrame:
+    """Keep rows matching config.billable_service_prefixes."""
     if df.empty:
         return df
-    prefixes = tuple(config.billable_service_prefixes)
+    prefixes = tuple(getattr(config, "billable_service_prefixes", ("Del - FWD",)))
     mask = df["service_type"].apply(lambda s: any(str(s).startswith(p) for p in prefixes))
     return df.loc[mask].copy()
 

@@ -129,7 +129,7 @@ def main() -> None:
         return
 
     try:
-        df = load_sheet1(uploaded, courier_cfg)
+        df = load_sheet1(uploaded, mgmt)
     except Exception as exc:  # noqa: BLE001 — surface parse errors in UI
         st.error(f"Could not read Sheet1: {exc}")
         return
@@ -157,8 +157,8 @@ def main() -> None:
         )
         if st.button("Calculate fleet", type="primary", key="calc_fleet"):
             with st.spinner("Calculating SPX revenue and courier cost…"):
-                payouts = courier_calc.calculate_all(df)
-                results = fleet_calc.calculate_all(df, payouts=payouts)
+                # Courier cost = OKAR poster on Del - FWD only; revenue uses full mgmt rules
+                results = fleet_calc.calculate_all(df)
                 st.session_state["mgmt_results"] = results
                 st.session_state["mgmt_summary"] = fleet_calc.fleet_summary(results)
 

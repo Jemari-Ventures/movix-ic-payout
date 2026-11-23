@@ -1,7 +1,7 @@
 {
   "currency_symbol": "RM",
   "sheet_name": "Sheet1",
-  "billable_service_prefixes": ["Del - FWD", "PU - RR", "Del - RTS"],
+  "billable_service_prefixes": ["Del - FWD"],
   "service_type_rates": [
     {
       "match": "Del - FWD D2D",
@@ -10,21 +10,8 @@
     },
     {
       "match": "Del - FWD BSC",
-      "mode": "flat",
-      "rate": 0.1,
-      "label": "Buyer self collect"
-    },
-    {
-      "match": "Del - RTS",
-      "mode": "flat",
-      "rate": 0.0,
-      "label": "Return to seller (nil)"
-    },
-    {
-      "match": "PU - RR D2D",
-      "mode": "flat",
-      "rate": 0.7,
-      "label": "Pickup return"
+      "mode": "weight_commission",
+      "label": "Buyer self collect (weight card)"
     }
   ],
   "weight_commission": [
@@ -46,10 +33,8 @@
   },
   "absent_penalty_per_day": 30.0,
   "notes": [
-    "Del - FWD D2D uses the weight commission poster (RM1 / RM1.80 / RM3).",
-    "Del - FWD BSC = RM0.10 flat (buyer self collect).",
-    "Del - RTS = nil (RM0).",
-    "PU - RR D2D = RM0.70 flat (pickup return).",
-    "Failed Deliveries are excluded."
+    "Courier pay uses the OKAR weight commission poster for all Del - FWD (D2D and BSC).",
+    "BSC RM0.10 / PU-RR RM0.70 / RTS nil are management (SPX) rates only — see config_management.json.",
+    "Failed Deliveries, Del - RTS, and PU - RR are excluded from courier payout."
   ]
 }

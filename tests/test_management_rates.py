@@ -46,7 +46,7 @@ def test_spx_drop_off_column_matches_card():
     assert cfg.spx_weight_rates[7].drop_off == 2.5  # 50–60kg
 
 
-def test_fleet_bsc_uses_flat_rate():
+def test_fleet_bsc_flat_mgmt_vs_weight_courier():
     mgmt = ManagementConfig.load()
     courier = MovixConfig.load()
     calc = FleetPayoutCalculator(mgmt, courier)
@@ -68,6 +68,6 @@ def test_fleet_bsc_uses_flat_rate():
     df = pd.DataFrame(rows)
     result = calc.calculate_driver(df, "D1")
     assert result.total_parcels == 5
-    assert result.spx_revenue == 0.5  # 5 × 0.10
-    assert result.courier_cost == 0.5  # courier BSC also RM0.10
-    assert result.margin == 0.0
+    assert result.spx_revenue == 0.5  # management: 5 × RM0.10
+    assert result.courier_cost == 5.0  # courier poster: 5 × RM1.00
+    assert result.margin == -4.5

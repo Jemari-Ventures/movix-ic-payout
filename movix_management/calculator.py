@@ -76,6 +76,13 @@ class FleetPayoutCalculator:
     def enrich(self, df: pd.DataFrame) -> pd.DataFrame:
         return apply_spx_rates(df, self.mgmt)
 
+    @staticmethod
+    def _courier_billable(df: pd.DataFrame) -> pd.DataFrame:
+        """Courier poster applies to Del - FWD only (not management PU-RR / RTS rows)."""
+        if df.empty or "service_type" not in df.columns:
+            return df
+        return df[df["service_type"].astype(str).str.startswith("Del - FWD")].copy()
+
     def calculate_driver(
         self,
         df: pd.DataFrame,
@@ -87,7 +94,10 @@ class FleetPayoutCalculator:
         driver_id = str(driver_id).strip()
         scoped = df[df["driver_id"].astype(str) == driver_id].copy()
         payout = payout or self.courier_calc.calculate_driver(
-            scoped, driver_id, mc_days=mc_days, absent_days=absent_days
+            self._courier_billable(scoped),
+            driver_id,
+            mc_days=mc_days,
+            absent_days=absent_days,
         )
         return self._from_scoped(scoped, payout)
 
@@ -104,7 +114,9 @@ class FleetPayoutCalculator:
         elif not df.empty:
             payout_map = {
                 str(p.driver_id): p
-                for p in self.courier_calc.calculate_all(df, adjustments=adjustments)
+                for p in self.courier_calc.calculate_all(
+                    self._courier_billable(df), adjustments=adjustments
+                )
             }
 
         results: List[DriverFleetResult] = []
