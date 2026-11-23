@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -27,6 +28,7 @@ from movix_dispatcher.calculator import MovixPayoutCalculator, PayoutResult, res
 from movix_dispatcher.config import MovixConfig
 from movix_dispatcher.ingest import date_bounds, driver_directory, load_sheet1
 from movix_dispatcher.invoice import build_invoice_html
+from movix_dispatcher.projections import parse_adjustments_csv, project_full_month_if_short
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "config_movix.json"
 LOGO_PATH = Path(__file__).resolve().parent.parent / "assets" / "movix-logo.png"
@@ -92,12 +94,17 @@ def main() -> None:
     with st.sidebar:
         st.header("Data")
         uploaded = st.file_uploader("Upload IC Payment Excel (.xlsx)", type=["xlsx"])
-        st.markdown("**Courier rate card** (OKAR poster)")
+        adj_upload = st.file_uploader(
+            "Optional MC / absent CSV (driver_id, mc_days, absent_days)",
+            type=["csv"],
+            key="courier_adj_csv",
+        )
+        st.markdown("**Courier rate card** — see [RATES.md](RATES.md)")
         st.dataframe(as_arrow_safe(pd.DataFrame(config.rate_table_rows())), hide_index=True, **width_kwargs())
         st.markdown(
             f"- **Del - FWD D2D** — courier tier RM1 / RM1.80 / RM3\n"
             f"- **PU - RR / Del - RTS** — **RM0.70** flat (return)\n"
-            f"- **Del - FWD BSC** — **RM0.10** flat (buyer self collect)\n"
+            f"- **Del - FWD BSC** — **RM0.10** · **Failed** — RM0 audit\n"
             f"- Basic: **{config.currency_symbol}{config.basic_amount:,.0f}** "
             f"(≥{config.basic_required_working_days} days & avg ≥{config.basic_min_avg_parcels_per_day:.0f}/day)\n"
             f"- Attendance: **{config.currency_symbol}{config.attendance_amount:,.0f}** "
@@ -105,6 +112,7 @@ def main() -> None:
             f"{config.mc_days_disqualify_at}+ MC → no allowance)\n"
             f"- Absent: **{config.currency_symbol}{config.absent_penalty_per_day:.0f}/day**"
         )
+        st.caption("Streamlit Cloud: set Python **3.12** (`runtime.txt`).")
 
     if uploaded is None:
         st.info("Upload an IC Payment `.xlsx` file (Sheet1) to begin.")
@@ -141,6 +149,18 @@ def main() -> None:
         adj_seed = drivers[["driver_id", "driver_name"]].copy()
         adj_seed["mc_days"] = 0
         adj_seed["absent_days"] = 0
+        if adj_upload is not None:
+            try:
+                csv_adj = parse_adjustments_csv(pd.read_csv(adj_upload))
+                adj_seed["mc_days"] = adj_seed["driver_id"].map(
+                    lambda d: int((csv_adj.get(str(d)) or {}).get("mc_days", 0))
+                )
+                adj_seed["absent_days"] = adj_seed["driver_id"].map(
+                    lambda d: int((csv_adj.get(str(d)) or {}).get("absent_days", 0))
+                )
+                st.caption(f"Loaded MC/absent for **{len(csv_adj)}** drivers from CSV.")
+            except Exception as exc:  # noqa: BLE001
+                st.warning(f"Could not parse adjustments CSV: {exc}")
         edited = st.data_editor(
             adj_seed,
             hide_index=True,
@@ -165,9 +185,20 @@ def main() -> None:
             st.session_state["movix_batch_summary"] = summary
             st.session_state["movix_batch_results"] = results
             st.session_state["movix_adjustments"] = adjustments
+            st.session_state["movix_freeze_payload"] = {
+                "frozen_at": pd.Timestamp.utcnow().isoformat(),
+                "period_start": str(start.date()) if start is not None else None,
+                "period_end": str(end.date()) if end is not None else None,
+                "adjustments": adjustments,
+                "summary": summary.to_dict(orient="records"),
+            }
 
         summary = st.session_state.get("movix_batch_summary")
         if summary is not None and not summary.empty:
+            batch_results_early: List[PayoutResult] = st.session_state.get("movix_batch_results") or []
+            proj = project_full_month_if_short(batch_results_early, config)
+            if proj is not None:
+                st.warning(proj.message)
             display_cols = [
                 "driver_id",
                 "driver_name",
@@ -218,6 +249,17 @@ def main() -> None:
                     )
                     st.markdown("**Fleet breakdown by service type**")
                     st.dataframe(as_arrow_safe(service_df), hide_index=True, **width_kwargs())
+                    returns = service_df[
+                        service_df["Service type"]
+                        .astype(str)
+                        .str.contains("PU - RR|Del - RTS", regex=True)
+                    ]
+                    if not returns.empty:
+                        st.info(
+                            "Returns (PU-RR / RTS) pay **RM0.70** flat on the courier card. "
+                            f"This period: **{int(returns['Parcels'].sum()):,}** parcels · "
+                            f"{_money(float(returns['Commission'].sum()), config.currency_symbol)}."
+                        )
 
             csv_buf = io.StringIO()
             summary.to_csv(csv_buf, index=False)
@@ -227,6 +269,14 @@ def main() -> None:
                 file_name="movix_okar_payout_summary.csv",
                 mime="text/csv",
             )
+            freeze = st.session_state.get("movix_freeze_payload")
+            if freeze:
+                st.download_button(
+                    "Freeze / download approved payroll JSON",
+                    data=json.dumps(freeze, indent=2, default=str),
+                    file_name=f"movix_okar_payroll_freeze_{freeze.get('period_end') or 'na'}.json",
+                    mime="application/json",
+                )
 
     with tab_driver:
         st.subheader("Single driver")
