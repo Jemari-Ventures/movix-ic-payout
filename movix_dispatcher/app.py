@@ -91,16 +91,18 @@ def main() -> None:
     with st.sidebar:
         st.header("Data")
         uploaded = st.file_uploader("Upload IC Payment Excel (.xlsx)", type=["xlsx"])
-        st.markdown("**Rate card**")
-        st.dataframe(pd.DataFrame(config.rate_table_rows()), hide_index=True, width="stretch")
+        st.markdown("**Courier rate card**")
+        st.dataframe(pd.DataFrame(config.rate_table_rows()), hide_index=True, use_container_width=True)
         st.markdown(
-            f"- Basic salary: **{config.currency_symbol}{config.basic_amount:,.0f}** "
+            f"- **Del - FWD D2D** — weight card (RM1 / RM1.80 / RM3)\n"
+            f"- **Del - FWD BSC** — RM0.10 flat (buyer self collect)\n"
+            f"- **PU - RR D2D** — RM0.70 flat · **Del - RTS** — nil\n"
+            f"- Basic: **{config.currency_symbol}{config.basic_amount:,.0f}** "
             f"(≥{config.basic_required_working_days} days & avg ≥{config.basic_min_avg_parcels_per_day:.0f}/day)\n"
             f"- Attendance: **{config.currency_symbol}{config.attendance_amount:,.0f}** "
-            f"(same gate; MC deducts {config.currency_symbol}{config.mc_deduction_per_day:.0f}/day; "
-            f"{config.mc_days_disqualify_at}+ MC days → no allowance)\n"
-            f"- Absent penalty: **{config.currency_symbol}{config.absent_penalty_per_day:.0f}/day**\n"
-            f"- Billable services: `{', '.join(config.billable_service_prefixes)}*`"
+            f"(MC −{config.currency_symbol}{config.mc_deduction_per_day:.0f}/day; "
+            f"{config.mc_days_disqualify_at}+ MC → no allowance)\n"
+            f"- Absent: **{config.currency_symbol}{config.absent_penalty_per_day:.0f}/day**"
         )
 
     if uploaded is None:
@@ -114,7 +116,7 @@ def main() -> None:
         return
 
     if df.empty:
-        st.warning("No billable forward-delivery rows found after filtering.")
+        st.warning("No billable service rows found after filtering (FWD / PU-RR / RTS).")
         return
 
     start, end = date_bounds(df)
@@ -141,7 +143,7 @@ def main() -> None:
         edited = st.data_editor(
             adj_seed,
             hide_index=True,
-            width="stretch",
+            use_container_width=True,
             disabled=["driver_id", "driver_name"],
             column_config={
                 "mc_days": st.column_config.NumberColumn("MC days", min_value=0, step=1),
@@ -180,7 +182,7 @@ def main() -> None:
                 "eligibility_reason",
             ]
             present = [c for c in display_cols if c in summary.columns]
-            st.dataframe(summary[present], hide_index=True, width="stretch")
+            st.dataframe(summary[present], hide_index=True, use_container_width=True)
 
             totals = {
                 "Parcels": int(summary["total_parcels"].sum()),
@@ -244,11 +246,11 @@ def main() -> None:
                     ]
                 )
                 st.markdown("**Commission by weight band**")
-                st.dataframe(band_df, hide_index=True, width="stretch")
+                st.dataframe(band_df, hide_index=True, use_container_width=True)
 
             if not result.daily_summary.empty:
                 st.markdown("**Daily summary**")
-                st.dataframe(result.daily_summary, hide_index=True, width="stretch")
+                st.dataframe(result.daily_summary, hide_index=True, use_container_width=True)
 
             if not result.parcel_detail.empty:
                 export_cols = [
@@ -302,7 +304,7 @@ def main() -> None:
             if "ranking" in frames:
                 st.markdown("**Driver ranking** (readable on mobile)")
                 st.caption("Use this table as the source of truth; charts below use short Driver IDs.")
-                st.dataframe(frames["ranking"], hide_index=True, width="stretch")
+                st.dataframe(frames["ranking"], hide_index=True, use_container_width=True)
 
             if "net_by_driver" in frames:
                 st.markdown("**Net payout by driver ID**")
@@ -320,7 +322,7 @@ def main() -> None:
                 st.dataframe(
                     frames["weight_mix"].reset_index().rename(columns={"weight_band": "Weight band"}),
                     hide_index=True,
-                    width="stretch",
+                    use_container_width=True,
                 )
             if "composition" in frames:
                 st.markdown("**Payout composition**")
@@ -352,7 +354,7 @@ def main() -> None:
                     st.markdown("**Daily parcels & commission**")
                     st.line_chart(driver_frames["daily"], color=[brand.PURPLE, brand.YELLOW], height=260)
                 if "daily_table" in driver_frames:
-                    st.dataframe(driver_frames["daily_table"], hide_index=True, width="stretch")
+                    st.dataframe(driver_frames["daily_table"], hide_index=True, use_container_width=True)
                 if "bands" in driver_frames:
                     st.markdown("**Weight band mix**")
                     st.bar_chart(
@@ -361,7 +363,7 @@ def main() -> None:
                         height=240,
                     )
                 if "bands_table" in driver_frames:
-                    st.dataframe(driver_frames["bands_table"], hide_index=True, width="stretch")
+                    st.dataframe(driver_frames["bands_table"], hide_index=True, use_container_width=True)
 
     with tab_invoice:
         st.subheader("Invoice")

@@ -1,4 +1,4 @@
-"""Weight → commission rate mapping for Movix IC parcels."""
+"""Service-type + weight → commission rate mapping for Movix IC parcels."""
 
 from __future__ import annotations
 
@@ -14,25 +14,46 @@ def resolve_weight_band(weight_kg: float, config: MovixConfig) -> Optional[Weigh
     if pd.isna(weight_kg):
         return None
     weight = float(weight_kg)
-    # Guard negative / nonsense weights
     if weight < 0:
         return None
     for band in config.weight_commission:
         if band.contains(weight):
             return band
-    # Fallback: if weight sits in the 5.00–5.01 gap, treat as upper of first band
-    # Poster uses 0–5.00 then 5.01–20.00; float noise at exactly 5.005 is rare.
     for band in config.weight_commission:
         if band.max_kg is None or weight <= band.max_kg + 0.01:
             return band
     return None
 
 
-def commission_rate(weight_kg: float, config: MovixConfig) -> Tuple[float, str]:
+def weight_commission_rate(weight_kg: float, config: MovixConfig) -> Tuple[float, str]:
     band = resolve_weight_band(weight_kg, config)
     if band is None:
         return 0.0, "Unmapped"
     return float(band.rate), band.label or "Weight band"
+
+
+def commission_rate(
+    weight_kg: float,
+    config: MovixConfig,
+    service_type: object = "Del - FWD D2D",
+) -> Tuple[float, str]:
+    """Resolve courier pay for a parcel (service-type rules + D2D weight card)."""
+    rule = config.find_service_rule(service_type)
+    if rule is None:
+        # Legacy fallback: treat unknown Del - FWD* as weight commission
+        text = str(service_type or "")
+        if text.startswith("Del - FWD"):
+            return weight_commission_rate(weight_kg, config)
+        return 0.0, "Unmapped service"
+
+    if rule.mode == "flat":
+        rate = 0.0 if rule.rate is None else float(rule.rate)
+        return rate, rule.label or rule.match
+
+    if rule.mode == "weight_commission":
+        return weight_commission_rate(weight_kg, config)
+
+    return 0.0, f"Unknown mode:{rule.mode}"
 
 
 def apply_commission_rates(df: pd.DataFrame, config: MovixConfig) -> pd.DataFrame:
@@ -46,8 +67,10 @@ def apply_commission_rates(df: pd.DataFrame, config: MovixConfig) -> pd.DataFram
 
     rates = []
     labels = []
-    for weight in out["chargeable_weight"]:
-        rate, label = commission_rate(weight, config)
+    service_col = out["service_type"] if "service_type" in out.columns else None
+    for idx, weight in enumerate(out["chargeable_weight"]):
+        st = service_col.iloc[idx] if service_col is not None else "Del - FWD D2D"
+        rate, label = commission_rate(weight, config, service_type=st)
         rates.append(rate)
         labels.append(label)
 

@@ -26,10 +26,19 @@ class WeightBand:
 
 
 @dataclass(frozen=True)
+class ServiceTypeRate:
+    match: str
+    mode: str  # weight_commission | flat
+    rate: Optional[float] = None
+    label: str = ""
+
+
+@dataclass(frozen=True)
 class MovixConfig:
     currency_symbol: str = "RM"
     sheet_name: str = "Sheet1"
-    billable_service_prefixes: tuple = ("Del - FWD",)
+    billable_service_prefixes: tuple = ("Del - FWD", "PU - RR", "Del - RTS")
+    service_type_rates: tuple = ()
     weight_commission: tuple = ()
     basic_amount: float = 1700.0
     basic_required_working_days: int = 26
@@ -40,6 +49,7 @@ class MovixConfig:
     mc_deduction_per_day: float = 100.0
     mc_days_disqualify_at: int = 2
     absent_penalty_per_day: float = 30.0
+    notes: tuple = ()
     raw: Dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
 
     @classmethod
@@ -53,13 +63,26 @@ class MovixConfig:
             )
             for band in data.get("weight_commission", [])
         )
+        service_rates = tuple(
+            ServiceTypeRate(
+                match=str(rule["match"]),
+                mode=str(rule.get("mode") or "flat"),
+                rate=None if rule.get("rate") is None else float(rule["rate"]),
+                label=str(rule.get("label") or rule["match"]),
+            )
+            for rule in data.get("service_type_rates", [])
+        )
         basic = data.get("basic_salary", {}) or {}
         attendance = data.get("attendance_allowance", {}) or {}
-        prefixes = tuple(data.get("billable_service_prefixes") or ["Del - FWD"])
+        prefixes = tuple(
+            data.get("billable_service_prefixes")
+            or ["Del - FWD", "PU - RR", "Del - RTS"]
+        )
         return cls(
             currency_symbol=str(data.get("currency_symbol", "RM")),
             sheet_name=str(data.get("sheet_name", "Sheet1")),
             billable_service_prefixes=prefixes,
+            service_type_rates=service_rates,
             weight_commission=bands,
             basic_amount=float(basic.get("amount", 1700.0)),
             basic_required_working_days=int(basic.get("required_working_days", 26)),
@@ -72,6 +95,7 @@ class MovixConfig:
             mc_deduction_per_day=float(attendance.get("mc_deduction_per_day", 100.0)),
             mc_days_disqualify_at=int(attendance.get("mc_days_disqualify_at", 2)),
             absent_penalty_per_day=float(data.get("absent_penalty_per_day", 30.0)),
+            notes=tuple(data.get("notes") or []),
             raw=data,
         )
 
@@ -81,13 +105,38 @@ class MovixConfig:
         with config_path.open(encoding="utf-8") as fh:
             return cls.from_dict(json.load(fh))
 
+    def find_service_rule(self, service_type: object) -> Optional[ServiceTypeRate]:
+        text = str(service_type or "").strip()
+        for rule in self.service_type_rates:
+            if text == rule.match or text.startswith(rule.match):
+                return rule
+        return None
+
     def rate_table_rows(self) -> List[Dict[str, Any]]:
-        rows = []
+        rows: List[Dict[str, Any]] = []
+        for rule in self.service_type_rates:
+            if rule.mode == "flat":
+                rows.append(
+                    {
+                        "Service": rule.match,
+                        "Rule": rule.label,
+                        "Rate (RM)": rule.rate if rule.rate is not None else 0.0,
+                    }
+                )
+            else:
+                rows.append(
+                    {
+                        "Service": rule.match,
+                        "Rule": rule.label,
+                        "Rate (RM)": "weight card",
+                    }
+                )
         for band in self.weight_commission:
             rows.append(
                 {
-                    "Weight band": band.label or f"{band.min_kg} – {band.max_kg}",
-                    "Rate (RM/parcel)": band.rate,
+                    "Service": "Del - FWD D2D weight",
+                    "Rule": band.label or f"{band.min_kg} – {band.max_kg}",
+                    "Rate (RM)": band.rate,
                 }
             )
         return rows

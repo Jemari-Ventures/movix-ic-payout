@@ -1,7 +1,32 @@
 {
   "currency_symbol": "RM",
   "sheet_name": "Sheet1",
-  "billable_service_prefixes": ["Del - FWD"],
+  "billable_service_prefixes": ["Del - FWD", "PU - RR", "Del - RTS"],
+  "service_type_rates": [
+    {
+      "match": "Del - FWD D2D",
+      "mode": "weight_commission",
+      "label": "Door-to-door (weight card)"
+    },
+    {
+      "match": "Del - FWD BSC",
+      "mode": "flat",
+      "rate": 0.1,
+      "label": "Buyer self collect"
+    },
+    {
+      "match": "Del - RTS",
+      "mode": "flat",
+      "rate": 0.0,
+      "label": "Return to seller (nil)"
+    },
+    {
+      "match": "PU - RR D2D",
+      "mode": "flat",
+      "rate": 0.7,
+      "label": "Pickup return"
+    }
+  ],
   "weight_commission": [
     {"min_kg": 0.0, "max_kg": 5.0, "rate": 1.0, "label": "0 – 5.00 kg"},
     {"min_kg": 5.01, "max_kg": 20.0, "rate": 1.8, "label": "5.01 – 20.00 kg"},
@@ -19,5 +44,12 @@
     "mc_deduction_per_day": 100.0,
     "mc_days_disqualify_at": 2
   },
-  "absent_penalty_per_day": 30.0
+  "absent_penalty_per_day": 30.0,
+  "notes": [
+    "Del - FWD D2D uses the weight commission poster (RM1 / RM1.80 / RM3).",
+    "Del - FWD BSC = RM0.10 flat (buyer self collect).",
+    "Del - RTS = nil (RM0).",
+    "PU - RR D2D = RM0.70 flat (pickup return).",
+    "Failed Deliveries are excluded."
+  ]
 }

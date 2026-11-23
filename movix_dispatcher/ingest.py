@@ -79,7 +79,7 @@ def normalize_frame(df: pd.DataFrame, config: Optional[MovixConfig] = None) -> p
 
 
 def filter_billable(df: pd.DataFrame, config: MovixConfig) -> pd.DataFrame:
-    """Keep forward-delivery rows only (Del - FWD*)."""
+    """Keep configured service types (Del - FWD*, PU - RR*, Del - RTS by default)."""
     if df.empty:
         return df
     prefixes = tuple(config.billable_service_prefixes)
