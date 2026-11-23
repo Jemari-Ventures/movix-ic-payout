@@ -46,7 +46,7 @@ def test_spx_drop_off_column_matches_card():
     assert cfg.spx_weight_rates[7].drop_off == 2.5  # 50–60kg
 
 
-def test_fleet_bsc_mgmt_revenue_courier_excludes():
+def test_fleet_bsc_both_sides_spx_flat():
     mgmt = ManagementConfig.load()
     courier = MovixConfig.load()
     calc = FleetPayoutCalculator(mgmt, courier)
@@ -69,5 +69,5 @@ def test_fleet_bsc_mgmt_revenue_courier_excludes():
     result = calc.calculate_driver(df, "D1")
     assert result.total_parcels == 5
     assert result.spx_revenue == 0.5  # management: 5 × RM0.10
-    assert result.courier_cost == 0.0  # BSC excluded from courier pay
-    assert result.margin == 0.5
+    assert result.courier_cost == 0.5  # courier BSC also SPX RM0.10
+    assert result.margin == 0.0

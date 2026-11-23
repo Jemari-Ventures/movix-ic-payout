@@ -1,7 +1,12 @@
 {
   "currency_symbol": "RM",
   "sheet_name": "Sheet1",
-  "billable_service_prefixes": ["Del - FWD D2D", "PU - RR D2D"],
+  "billable_service_prefixes": [
+    "Del - FWD D2D",
+    "Del - FWD BSC",
+    "PU - RR D2D",
+    "Del - RTS"
+  ],
   "service_type_rates": [
     {
       "match": "Del - FWD D2D",
@@ -9,9 +14,20 @@
       "label": "Door-to-door (weight card)"
     },
     {
+      "match": "Del - FWD BSC",
+      "mode": "flat",
+      "rate": 0.1,
+      "label": "Buyer self collect (SPX rate)"
+    },
+    {
       "match": "PU - RR D2D",
       "mode": "weight_commission",
       "label": "Pickup return (weight card)"
+    },
+    {
+      "match": "Del - RTS",
+      "mode": "weight_commission",
+      "label": "Return to seller (weight card)"
     }
   ],
   "weight_commission": [
@@ -33,8 +49,8 @@
   },
   "absent_penalty_per_day": 30.0,
   "notes": [
-    "Courier: Del - FWD D2D and PU - RR D2D both use the OKAR weight poster (RM1 / RM1.80 / RM3).",
-    "Courier: Del - FWD BSC and Del - RTS are excluded.",
-    "Management PU-RR RM0.70 / BSC RM0.10 / RTS nil live in config_management.json only."
+    "Courier Del - FWD D2D / PU - RR D2D / Del - RTS → OKAR weight poster (RM1 / RM1.80 / RM3).",
+    "Courier Del - FWD BSC → SPX rate RM0.10 flat.",
+    "Failed Deliveries remain excluded."
   ]
 }

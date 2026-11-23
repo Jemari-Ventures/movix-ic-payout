@@ -1,4 +1,4 @@
-"""Unit tests for Movix weight commission (courier poster)."""
+"""Unit tests for Movix weight commission (courier poster) + service overrides."""
 
 from __future__ import annotations
 
@@ -35,18 +35,27 @@ def test_d2d_commission_bands(config, weight, expected_rate, expected_label):
     assert band.rate == expected_rate
 
 
-def test_courier_billable_d2d_and_pickup_return(config):
-    assert config.billable_service_prefixes == ("Del - FWD D2D", "PU - RR D2D")
-    # PU-RR follows courier weight card (not management RM0.70)
-    rate, label = commission_rate(1.0, config, service_type="PU - RR D2D")
+def test_courier_service_overrides(config):
+    assert "Del - FWD BSC" in config.billable_service_prefixes
+    assert "Del - RTS" in config.billable_service_prefixes
+
+    # BSC → SPX flat RM0.10 (not weight poster)
+    rate, label = commission_rate(2.0, config, service_type="Del - FWD BSC")
+    assert rate == 0.1
+    assert "SPX" in label or "self collect" in label.lower()
+    rate, _ = commission_rate(25.0, config, service_type="Del - FWD BSC")
+    assert rate == 0.1
+
+    # RTS → courier weight poster
+    rate, label = commission_rate(2.0, config, service_type="Del - RTS")
     assert rate == 1.0
     assert label == "0 – 5.00 kg"
-    rate, _ = commission_rate(7.0, config, service_type="PU - RR D2D")
+    rate, _ = commission_rate(10.0, config, service_type="Del - RTS")
     assert rate == 1.8
-    rate, _ = commission_rate(2.0, config, service_type="Del - FWD BSC")
-    assert rate == 0.0
-    rate, _ = commission_rate(1.0, config, service_type="Del - RTS")
-    assert rate == 0.0
+
+    # PU-RR → weight poster
+    rate, _ = commission_rate(1.0, config, service_type="PU - RR D2D")
+    assert rate == 1.0
 
 
 def test_negative_weight_unmapped(config):
