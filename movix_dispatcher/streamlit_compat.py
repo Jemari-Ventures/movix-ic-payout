@@ -10,18 +10,19 @@ import streamlit as st
 
 
 def width_kwargs(stretch: bool = True) -> Dict[str, Any]:
-    """Prefer width=stretch/content on new Streamlit; fall back to use_container_width."""
+    """Prefer use_container_width on older Streamlit; width=stretch on newer Cloud."""
     params = inspect.signature(st.dataframe).parameters
-    if "width" in params:
-        return {"width": "stretch" if stretch else "content"}
-    return {"use_container_width": stretch}
+    # Streamlit < ~1.49: width is int-only; use_container_width is the stretch API.
+    if "use_container_width" in params:
+        return {"use_container_width": stretch}
+    return {"width": "stretch" if stretch else "content"}
 
 
 def chart_width_kwargs(stretch: bool = True) -> Dict[str, Any]:
     params = inspect.signature(st.bar_chart).parameters
-    if "width" in params:
-        return {"width": "stretch" if stretch else "content"}
-    return {"use_container_width": stretch}
+    if "use_container_width" in params:
+        return {"use_container_width": stretch}
+    return {"width": "stretch" if stretch else "content"}
 
 
 def as_arrow_safe(df: pd.DataFrame) -> pd.DataFrame:
