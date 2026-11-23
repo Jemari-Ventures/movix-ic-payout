@@ -37,7 +37,7 @@ class ServiceTypeRate:
 class MovixConfig:
     currency_symbol: str = "RM"
     sheet_name: str = "Sheet1"
-    billable_service_prefixes: tuple = ("Del - FWD", "PU - RR", "Del - RTS")
+    billable_service_prefixes: tuple = ("Del - FWD D2D", "PU - RR D2D")
     service_type_rates: tuple = ()
     weight_commission: tuple = ()
     basic_amount: float = 1700.0
@@ -75,8 +75,7 @@ class MovixConfig:
         basic = data.get("basic_salary", {}) or {}
         attendance = data.get("attendance_allowance", {}) or {}
         prefixes = tuple(
-            data.get("billable_service_prefixes")
-            or ["Del - FWD", "PU - RR", "Del - RTS"]
+            data.get("billable_service_prefixes") or ["Del - FWD D2D", "PU - RR D2D"]
         )
         return cls(
             currency_symbol=str(data.get("currency_symbol", "RM")),

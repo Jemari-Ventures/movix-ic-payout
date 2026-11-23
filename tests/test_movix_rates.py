@@ -35,12 +35,15 @@ def test_d2d_commission_bands(config, weight, expected_rate, expected_label):
     assert band.rate == expected_rate
 
 
-def test_courier_billable_is_d2d_only(config):
-    assert config.billable_service_prefixes == ("Del - FWD D2D",)
-    # BSC / PU-RR / RTS are not courier-paid even if rated in isolation
+def test_courier_billable_d2d_and_pickup_return(config):
+    assert config.billable_service_prefixes == ("Del - FWD D2D", "PU - RR D2D")
+    # PU-RR follows courier weight card (not management RM0.70)
+    rate, label = commission_rate(1.0, config, service_type="PU - RR D2D")
+    assert rate == 1.0
+    assert label == "0 – 5.00 kg"
+    rate, _ = commission_rate(7.0, config, service_type="PU - RR D2D")
+    assert rate == 1.8
     rate, _ = commission_rate(2.0, config, service_type="Del - FWD BSC")
-    assert rate == 0.0
-    rate, _ = commission_rate(1.0, config, service_type="PU - RR D2D")
     assert rate == 0.0
     rate, _ = commission_rate(1.0, config, service_type="Del - RTS")
     assert rate == 0.0
