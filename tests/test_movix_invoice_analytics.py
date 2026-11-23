@@ -55,6 +55,7 @@ def test_invoice_html_contains_net_and_okar():
     html = build_invoice_html(result, cfg)
     assert "OS Karangan (OKAR)" in html
     assert "Net payable" in html
+    assert "Commission by service type" in html
     assert f"{result.net_payout:,.2f}" in html
     assert "1001" in html
     assert "Movix Logistics (M) Sdn. Bhd" in html

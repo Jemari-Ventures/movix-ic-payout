@@ -33,6 +33,17 @@ def build_invoice_html(
         part for part in [result.period_start or "—", result.period_end or "—"] if part
     )
 
+    service_rows = ""
+    for service, count in result.parcels_by_service.items():
+        amount = result.commission_by_service.get(service, 0.0)
+        service_rows += (
+            f"<tr><td>{escape(str(service))}</td>"
+            f"<td class='num'>{int(count):,}</td>"
+            f"<td class='num'>{_money(float(amount), symbol)}</td></tr>"
+        )
+    if not service_rows:
+        service_rows = "<tr><td colspan='3'>No billable parcels</td></tr>"
+
     band_rows = ""
     for band, count in result.parcels_by_band.items():
         amount = result.commission_by_band.get(band, 0.0)
@@ -274,7 +285,13 @@ def build_invoice_html(
         <div class="card"><div class="label">Net payout</div><div class="value">{_money(result.net_payout, symbol)}</div></div>
       </div>
 
-      <h2>Commission by weight</h2>
+      <h2>Commission by service type</h2>
+      <table>
+        <thead><tr><th>Service type</th><th class="num">Parcels</th><th class="num">Amount</th></tr></thead>
+        <tbody>{service_rows}</tbody>
+      </table>
+
+      <h2>Commission by weight / rate label</h2>
       <table>
         <thead><tr><th>Weight band</th><th class="num">Parcels</th><th class="num">Amount</th></tr></thead>
         <tbody>{band_rows}</tbody>
