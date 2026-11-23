@@ -120,7 +120,7 @@ class MovixConfig:
                     {
                         "Service": rule.match,
                         "Rule": rule.label,
-                        "Rate (RM)": rule.rate if rule.rate is not None else 0.0,
+                        "Rate (RM)": f"{0.0 if rule.rate is None else rule.rate:g}",
                     }
                 )
             else:
@@ -136,7 +136,7 @@ class MovixConfig:
                 {
                     "Service": "Del - FWD D2D weight",
                     "Rule": band.label or f"{band.min_kg} – {band.max_kg}",
-                    "Rate (RM)": band.rate,
+                    "Rate (RM)": f"{band.rate:g}",
                 }
             )
         return rows
