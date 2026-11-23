@@ -18,7 +18,8 @@ Edit amounts in JSON only — do not hardcode rates in UI code.
 | Attendance | RM200 same gate; MC −RM100/day; ≥2 MC → no allowance |
 | Absent | −RM30/day |
 
-Volume gate currently counts **all billable** parcels (D2D, BSC, returns, failed). Ops review of whether BSC/returns count is **on hold**.
+Volume gate (`volume_gate_service_prefixes`) counts **Del - FWD D2D only**.
+BSC, returns, and Failed still earn commission (or RM0 audit) but do **not** inflate the ≥50/day average.
 
 ## Deploy
 

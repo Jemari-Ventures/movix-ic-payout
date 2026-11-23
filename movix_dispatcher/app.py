@@ -106,7 +106,8 @@ def main() -> None:
             f"- **PU - RR / Del - RTS** — **RM0.70** flat (return)\n"
             f"- **Del - FWD BSC** — **RM0.10** · **Failed** — RM0 audit\n"
             f"- Basic: **{config.currency_symbol}{config.basic_amount:,.0f}** "
-            f"(≥{config.basic_required_working_days} days & avg ≥{config.basic_min_avg_parcels_per_day:.0f}/day)\n"
+            f"(≥{config.basic_required_working_days} days & avg ≥{config.basic_min_avg_parcels_per_day:.0f}/day "
+            f"on **{' / '.join(config.volume_gate_service_prefixes) or 'all billable'}** only)\n"
             f"- Attendance: **{config.currency_symbol}{config.attendance_amount:,.0f}** "
             f"(MC −{config.currency_symbol}{config.mc_deduction_per_day:.0f}/day; "
             f"{config.mc_days_disqualify_at}+ MC → no allowance)\n"
@@ -203,6 +204,7 @@ def main() -> None:
                 "driver_id",
                 "driver_name",
                 "total_parcels",
+                "volume_parcels",
                 "working_days",
                 "avg_parcels_per_day",
                 "commission_total",
@@ -293,11 +295,12 @@ def main() -> None:
             result = calc.calculate_driver(df, driver_id, mc_days=mc_days, absent_days=absent_days)
             st.session_state["movix_single_result"] = result
 
-            m1, m2, m3, m4 = st.columns(4)
+            m1, m2, m3, m4, m5 = st.columns(5)
             m1.metric("Parcels", f"{result.total_parcels:,}")
-            m2.metric("Working days", result.working_days)
-            m3.metric("Avg / day", f"{result.avg_parcels_per_day:.2f}")
-            m4.metric("Net payout", _money(result.net_payout, config.currency_symbol))
+            m2.metric("Volume (gate)", f"{result.volume_parcels:,}")
+            m3.metric("Working days", result.working_days)
+            m4.metric("Avg volume / day", f"{result.avg_parcels_per_day:.2f}")
+            m5.metric("Net payout", _money(result.net_payout, config.currency_symbol))
 
             b1, b2, b3, b4 = st.columns(4)
             b1.metric("Commission", _money(result.commission_total, config.currency_symbol))

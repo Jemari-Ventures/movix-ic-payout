@@ -280,8 +280,9 @@ def build_invoice_html(
 
       <div class="meta">
         <div class="card"><div class="label">Parcels</div><div class="value">{result.total_parcels:,}</div></div>
+        <div class="card"><div class="label">Volume (gate)</div><div class="value">{result.volume_parcels:,}</div></div>
         <div class="card"><div class="label">Working days</div><div class="value">{result.working_days}</div></div>
-        <div class="card"><div class="label">Avg / day</div><div class="value">{result.avg_parcels_per_day:.2f}</div></div>
+        <div class="card"><div class="label">Avg volume / day</div><div class="value">{result.avg_parcels_per_day:.2f}</div></div>
         <div class="card"><div class="label">Net payout</div><div class="value">{_money(result.net_payout, symbol)}</div></div>
       </div>
 

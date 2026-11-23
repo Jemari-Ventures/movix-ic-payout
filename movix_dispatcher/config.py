@@ -44,6 +44,8 @@ class MovixConfig:
         "Del - RTS",
         "Failed Deliveries",
     )
+    # Parcels matching these prefixes count toward the ≥50/day basic/attendance gate.
+    volume_gate_service_prefixes: tuple = ("Del - FWD D2D",)
     service_type_rates: tuple = ()
     weight_commission: tuple = ()
     basic_amount: float = 1700.0
@@ -90,10 +92,16 @@ class MovixConfig:
                 "Failed Deliveries",
             ]
         )
+        volume_prefixes = tuple(
+            data.get("volume_gate_service_prefixes")
+            if data.get("volume_gate_service_prefixes") is not None
+            else ["Del - FWD D2D"]
+        )
         return cls(
             currency_symbol=str(data.get("currency_symbol", "RM")),
             sheet_name=str(data.get("sheet_name", "Sheet1")),
             billable_service_prefixes=prefixes,
+            volume_gate_service_prefixes=volume_prefixes,
             service_type_rates=service_rates,
             weight_commission=bands,
             basic_amount=float(basic.get("amount", 1700.0)),

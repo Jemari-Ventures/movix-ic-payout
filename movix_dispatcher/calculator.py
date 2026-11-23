@@ -20,6 +20,7 @@ class PayoutResult:
     period_start: Optional[str]
     period_end: Optional[str]
     total_parcels: int
+    volume_parcels: int
     working_days: int
     avg_parcels_per_day: float
     commission_total: float
@@ -126,6 +127,7 @@ class MovixPayoutCalculator:
                 period_start=None,
                 period_end=None,
                 total_parcels=0,
+                volume_parcels=0,
                 working_days=0,
                 avg_parcels_per_day=0.0,
                 commission_total=0.0,
@@ -149,10 +151,19 @@ class MovixPayoutCalculator:
                 break
 
         total_parcels = int(len(priced))
+        volume_prefixes = tuple(cfg.volume_gate_service_prefixes)
+        if volume_prefixes and "service_type" in priced.columns:
+            volume_mask = priced["service_type"].astype(str).apply(
+                lambda s: any(s.startswith(p) for p in volume_prefixes)
+            )
+            volume_parcels = int(volume_mask.sum())
+        else:
+            # Empty prefix list → count all billable (legacy / explicit override)
+            volume_parcels = total_parcels
         working_days = int(priced["service_date"].nunique())
         eligibility: EligibilityResult = evaluate_eligibility(
             working_days=working_days,
-            total_parcels=total_parcels,
+            total_parcels=volume_parcels,
             config=cfg,
             mc_days=mc_days,
             absent_days=absent_days,
@@ -197,6 +208,7 @@ class MovixPayoutCalculator:
             period_start=period_start.strftime("%Y-%m-%d") if pd.notna(period_start) else None,
             period_end=period_end.strftime("%Y-%m-%d") if pd.notna(period_end) else None,
             total_parcels=total_parcels,
+            volume_parcels=volume_parcels,
             working_days=eligibility.working_days,
             avg_parcels_per_day=eligibility.avg_parcels_per_day,
             commission_total=commission_total,
