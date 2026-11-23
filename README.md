@@ -1,10 +1,17 @@
 # Movix IC Payout
 
-Standalone Streamlit calculator for **Movix Logistics (M) Sdn. Bhd** — OS Karangan (OKAR) courier payment.
+Standalone Streamlit apps for **Movix Logistics (M) Sdn. Bhd** — OS Karangan (OKAR).
 
-Extracted from the legacy hub payout tools so this product has a clean repo, deploy path, and rate card.
+Two deployable surfaces share this repo, brand, and Sheet1 contract:
 
-## Rate card
+| App | Branch (recommended) | Entrypoint | Audience |
+|-----|----------------------|------------|----------|
+| **OKAR Courier Payout** | `main` | `app.py` → `movix_dispatcher/app.py` | Couriers / payroll |
+| **OKAR Fleet Management** | `feat/management-fleet-view` | `app_management.py` → `movix_management/app.py` | Hub / ops / finance |
+
+Same purple/yellow Movix UI language; copy and KPIs tailored per role.
+
+## Courier rate card (`config_movix.json`)
 
 | Component | Rule |
 |-----------|------|
@@ -12,22 +19,25 @@ Extracted from the legacy hub payout tools so this product has a clean repo, dep
 | Basic salary | RM1,700 if ≥26 working days **and** avg ≥50 parcels/day |
 | Attendance | RM200 with the same volume gate; MC deducts RM100/day; ≥2 MC days → no allowance |
 | Absent | RM30/day unauthorized absence |
-| Volume gate fail | Commission only (no basic, no attendance) |
 
-Billable rows: service types starting with `Del - FWD` (D2D / BSC). Failed deliveries, RTS, and pickup rows are excluded.
+Billable rows: service types starting with `Del - FWD` (D2D / BSC).
+
+## SPX partner rate card (`config_management.json`)
+
+Weight bands from the SPX partner slide (door-to-door / return pickup vs drop-off / return to SPX).
+
+- **D2D** LM type → door-to-door rate  
+- **BSC** LM type → drop-off rate  
+
+Fleet margin = SPX revenue − OKAR courier net payout.
+
+Rates are editable in JSON and noted as indicative / tax-inclusive / excluding incentives.
 
 ## Input
 
 Excel workbook, **Sheet1** only:
 
-- Service Date
-- Service Type
-- LM Type (optional)
-- Shipment ID
-- Chargeable Weight
-- Driver ID
-- Driver Name
-- TIER (optional)
+- Service Date, Service Type, LM Type, Shipment ID, Chargeable Weight, Driver ID, Driver Name, TIER (optional)
 
 ## Setup
 
@@ -38,22 +48,42 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Run
+## Run locally
 
 ```bash
+# Courier payout (payroll)
 streamlit run app.py
+
+# Fleet management (ops)
+streamlit run app_management.py
 ```
 
-Upload the IC Payment `.xlsx` in the sidebar. Tabs:
+### Courier tabs
 
-- **Batch payout** — all drivers + CSV
-- **Single driver** — detail + parcel CSV
-- **Analytics** — fleet and per-driver charts (run batch calculate first for fleet view)
-- **Invoice** — printable HTML invoice + download
+Batch payout · Single driver · Analytics · Invoice
+
+### Fleet tabs
+
+Fleet overview (P&L) · Driver margin · Analytics · Rate cards
+
+## Streamlit Cloud (two apps, one repo)
+
+1. **App A — Courier**  
+   - Repo: this repo  
+   - Branch: `main`  
+   - Main file: `app.py`
+
+2. **App B — Fleet**  
+   - Repo: same  
+   - Branch: `feat/management-fleet-view` (or merge to a dedicated `deploy/management` branch)  
+   - Main file: `app_management.py`
+
+Keep UI tokens in `movix_dispatcher/brand.py` so both apps stay visually aligned.
 
 ## Config
 
-Rates live in [`config_movix.json`](config_movix.json). Change amounts / bands there without touching code.
+- Courier: [`config_movix.json`](config_movix.json)  
+- Fleet / SPX: [`config_management.json`](config_management.json)
 
 ## Tests
 
@@ -64,15 +94,12 @@ PYTHONPATH=. pytest tests -q
 ## Layout
 
 ```
-movix_dispatcher/
-  app.py           # Streamlit UI
-  calculator.py    # Payout engine
-  config.py        # Rate-card loader
-  eligibility.py   # Basic + attendance gates
-  ingest.py        # Sheet1 load / normalize
-  rates.py         # Weight → commission
-  schema.py        # Column contract
+movix_dispatcher/     # Courier payout app + shared brand/ingest
+movix_management/     # Fleet SPX revenue + margin app
+app.py                # Courier entrypoint
+app_management.py     # Fleet entrypoint
 config_movix.json
-requirements.txt
+config_management.json
+assets/
 tests/
 ```
